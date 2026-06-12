@@ -1,0 +1,61 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:TrainingHelper.App.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="TrainingHelper.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="TrainingHelper.App">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+        to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid RowDefinitions="Auto,Auto">
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <Label VerticalAlignment="Center">Interval: </Label>
+            <TimePicker UseSeconds="True" Margin="5"
+                        ClockIdentifier="24HourClock"
+                        SelectedTime="{Binding Interval}"
+                        IsEnabled="{Binding IsEditEnabled}"/>
+            <Label VerticalAlignment="Center">Break: </Label>
+            <TimePicker UseSeconds="True" Margin="5"
+                        ClockIdentifier="24HourClock"
+                        SelectedTime="{Binding Break}"
+                        IsEnabled="{Binding IsEditEnabled}"/>
+            <Label VerticalAlignment="Center">Repet count: </Label>
+            <NumericUpDown Value="{Binding RepetCount}"
+                           Minimum="1" Maximum="200"
+                           ShowButtonSpinner="False"
+                           AllowSpin="False"/>
+            <Button Command="{Binding StartCountdownCommand}">Start</Button>
+        </StackPanel>
+        <StackPanel Grid.Row="1">
+            <StackPanel Orientation="Horizontal">
+
+                <Label VerticalAlignment="Center">Current repet: </Label>
+                <Label VerticalAlignment="Center" Content="{Binding CurrentRepet}"/>
+                <Label IsVisible="{Binding !IsEditEnabled}">
+                    <Interaction.Behaviors>
+                        <DataTrigger Binding="{Binding Work}" Value="True">
+                            <ChangePropertyAction PropertyName="Content" Value="Work"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Work}" Value="False">
+                            <ChangePropertyAction PropertyName="Content" Value="Break"/>
+                        </DataTrigger>
+                    </Interaction.Behaviors>
+                </Label>
+            </StackPanel>
+            <ProgressBar  Margin="0 10" Height="20"
+                          Minimum="0" Maximum="{Binding TotalSeconds}"
+                          Value="{Binding SecondsPassed}"
+                          ShowProgressText="True"
+                          ProgressTextFormat="{}{0}" />
+        </StackPanel>
+
+    </Grid>
+
+</Window>
