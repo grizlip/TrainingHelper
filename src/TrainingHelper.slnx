@@ -1,3 +1,6 @@
 <Solution>
   <Project Path="TrainingHelper.App/TrainingHelper.App.csproj" />
+  <Project Path="SDL2-CS/SDL2-CS.Core.csproj" />
+  <Project Path="TrainingHelper.Common/TrainingHelper.Common.csproj" />
+  <Project Path="TrainingHelper.Sdl/TrainingHelper.Sdl.csproj" />
 </Solution>

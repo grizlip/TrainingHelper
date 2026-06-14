@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using TrainingHelper.App.Model;
 
 namespace TrainingHelper.App.ViewModels;
 
@@ -30,6 +31,13 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _work = true;
+
+    private readonly MainModel _model;
+
+    public MainWindowViewModel(MainModel model)
+    {
+        _model = model;
+    }
 
     [RelayCommand()]
     private async Task StartCountdown()
