@@ -8,4 +8,5 @@ public interface ISound
     Task PlayBreakJingleAsync();
     Task PlayStartJingleAsync();
     Task PlayEndJingleAsync();
+    Task PlayCountdownJingle();
 }

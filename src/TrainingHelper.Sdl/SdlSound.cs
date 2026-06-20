@@ -62,6 +62,15 @@ internal class SDLSound : IDisposable, ISound
         OpenAudioDevice(audioDeviceName);
     }
 
+    public async Task PlayCountdownJingle()
+    {
+        SDL.SDL_PauseAudioDevice(_soundDeviceId, 0);
+        _soundFrequency = 440;
+        await Task.Delay(50);
+        _soundFrequency = 0; //reset
+        SDL.SDL_PauseAudioDevice(_soundDeviceId, 1);
+    }
+
     public async Task PlayStartJingleAsync()
     {
         SDL.SDL_PauseAudioDevice(_soundDeviceId, 0);

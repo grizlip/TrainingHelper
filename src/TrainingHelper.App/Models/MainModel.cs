@@ -72,8 +72,15 @@ public class MainModel
         var secondsPassed = 0;
         while (secondsPassed < totalSeconds)
         {
-            await Task.Delay(1000, token);
-            secondsPassed = secondsPassed + 1;
+            if (!_noSound && totalSeconds - secondsPassed <= 3)
+            {
+                await Task.WhenAll(Task.Delay(1000, token), _sound.PlayCountdownJingle());
+            }
+            else
+            {
+                await Task.Delay(1000, token);
+            }
+            secondsPassed++;
             if (token.IsCancellationRequested)
             {
                 return;
