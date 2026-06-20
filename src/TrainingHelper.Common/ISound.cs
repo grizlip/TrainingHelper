@@ -6,7 +6,7 @@ public interface ISound
     void ChangeAudiDevice(string audioDeviceName);
     Task PlayWorkJingleAsync();
     Task PlayBreakJingleAsync();
-    Task PlayStartJingleAsync();
-    Task PlayEndJingleAsync();
-    Task PlayCountdownJingle();
+    Task PlayStartJingleAsyncAsync();
+    Task PlayEndJingleAsyncAsync();
+    Task PlayCountdownJingleAsync();
 }

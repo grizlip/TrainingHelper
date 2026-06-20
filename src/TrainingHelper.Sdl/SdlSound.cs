@@ -62,7 +62,7 @@ internal class SDLSound : IDisposable, ISound
         OpenAudioDevice(audioDeviceName);
     }
 
-    public async Task PlayCountdownJingle()
+    public async Task PlayCountdownJingleAsync()
     {
         SDL.SDL_PauseAudioDevice(_soundDeviceId, 0);
         _soundFrequency = 440;
@@ -71,7 +71,7 @@ internal class SDLSound : IDisposable, ISound
         SDL.SDL_PauseAudioDevice(_soundDeviceId, 1);
     }
 
-    public async Task PlayStartJingleAsync()
+    public async Task PlayStartJingleAsyncAsync()
     {
         SDL.SDL_PauseAudioDevice(_soundDeviceId, 0);
 
@@ -84,7 +84,7 @@ internal class SDLSound : IDisposable, ISound
         SDL.SDL_PauseAudioDevice(_soundDeviceId, 1);
     }
 
-    public async Task PlayEndJingleAsync()
+    public async Task PlayEndJingleAsyncAsync()
     {
         SDL.SDL_PauseAudioDevice(_soundDeviceId, 0);
 

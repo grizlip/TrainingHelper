@@ -29,7 +29,7 @@ public class MainModel
         _countdownCts?.Dispose();
 
         _countdownCts = new CancellationTokenSource();
-        await _sound.PlayStartJingleAsync();
+        await _sound.PlayStartJingleAsyncAsync();
 
         for (int currentRepet = 0; currentRepet < repetCount; currentRepet++)
         {
@@ -52,7 +52,7 @@ public class MainModel
             }
             catch (TaskCanceledException) { }
         }
-        await _sound.PlayEndJingleAsync();
+        await _sound.PlayEndJingleAsyncAsync();
     }
 
     public async Task StopCountdownAsync()
@@ -74,7 +74,7 @@ public class MainModel
         {
             if (!_noSound && totalSeconds - secondsPassed <= 3)
             {
-                await Task.WhenAll(Task.Delay(1000, token), _sound.PlayCountdownJingle());
+                await Task.WhenAll(Task.Delay(1000, token), _sound.PlayCountdownJingleAsync());
             }
             else
             {
