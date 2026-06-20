@@ -9,7 +9,7 @@ namespace TrainingHelper.App.ViewModels;
 public partial class MainWindowViewModel : ObservableObject
 {
     [ObservableProperty]
-    private TimeSpan _interval = TimeSpan.FromSeconds(30);
+    private TimeSpan _interval = TimeSpan.FromSeconds(5);
 
     [ObservableProperty]
     private TimeSpan _break = TimeSpan.FromSeconds(3);
@@ -27,7 +27,7 @@ public partial class MainWindowViewModel : ObservableObject
     private bool _isEditEnabled = true;
 
     [ObservableProperty]
-    private int _currentRepet = 0;
+    private int _currentRepet = 1;
 
     [ObservableProperty]
     private bool _work = true;
@@ -37,32 +37,39 @@ public partial class MainWindowViewModel : ObservableObject
     public MainWindowViewModel(MainModel model)
     {
         _model = model;
+        _model.CountdownStateChanged += OnCountdownStateChanged;
+    }
+
+    private void OnCountdownStateChanged(object? sender, (int SecondsPassed, int TotalSeconds, int CurrentRepet, bool Work) e)
+    {
+        Work = e.Work;
+        TotalSeconds = e.TotalSeconds;
+        SecondsPassed = e.SecondsPassed;
+        CurrentRepet = e.CurrentRepet + 1;
+    }
+
+    [RelayCommand()]
+    private async Task StopCountdown()
+    {
+        await _model.StopCountdownAsync();
+        TotalSeconds = Interval.TotalSeconds;
+        UpdateGuiStateAfterStopCountdown();
     }
 
     [RelayCommand()]
     private async Task StartCountdown()
     {
+        TotalSeconds = Interval.TotalSeconds;
+        SecondsPassed = 0;
         IsEditEnabled = false;
-        for (int i = 0; i < RepetCount; i++)
-        {
-            Work = true;
-            CurrentRepet = i + 1;
-            await Countdown(Interval.TotalSeconds);
-            Work = false;
-            await Countdown(Break.TotalSeconds);
-        }
-
-        IsEditEnabled = true;
+        await _model.StartCountdownAsync(Interval, Break, RepetCount);
+        UpdateGuiStateAfterStopCountdown();
     }
 
-    private async Task Countdown(double totalSeconds)
+    private void UpdateGuiStateAfterStopCountdown()
     {
-        TotalSeconds = totalSeconds;
         SecondsPassed = 0;
-        while (SecondsPassed < TotalSeconds)
-        {
-            await Task.Delay(1000);
-            SecondsPassed = SecondsPassed + 1;
-        }
+        IsEditEnabled = true;
+        CurrentRepet = 1;
     }
 }

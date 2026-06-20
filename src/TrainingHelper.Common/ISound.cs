@@ -4,5 +4,8 @@ public interface ISound
 {
     IReadOnlyCollection<string> SoundDevicesNames { get; }
     void ChangeAudiDevice(string audioDeviceName);
-    void ChangeSoundState(bool active);
+    Task PlayWorkJingleAsync();
+    Task PlayBreakJingleAsync();
+    Task PlayStartJingleAsync();
+    Task PlayEndJingleAsync();
 }

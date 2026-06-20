@@ -32,6 +32,7 @@
                            ShowButtonSpinner="False"
                            AllowSpin="False"/>
             <Button Command="{Binding StartCountdownCommand}">Start</Button>
+            <Button Command="{Binding StopCountdownCommand}">Stop</Button>
         </StackPanel>
         <StackPanel Grid.Row="1">
             <StackPanel Orientation="Horizontal">
