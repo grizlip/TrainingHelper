@@ -8,26 +8,25 @@ internal class SDLSound : IDisposable, ISound
 {
     public IReadOnlyCollection<string> SoundDevicesNames => _soundDevicesNames;
 
-    private readonly List<string> _soundDevicesNames = [];
     private double _samplingIndex = 0;
     private SDL.SDL_AudioSpec _haveAudioSpec;
     private uint _soundDeviceId;
-
-    private const double AMPLITUDE = 28000d;
     private double _soundFrequency = 0;
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+    private const double AMPLITUDE = 28000d;
+    private readonly List<string> _soundDevicesNames = [];    
     private readonly (double Frequency, int Milliseconds)[] _workBreakJingle =
     [
         new( 440.0, 200 ), // A4
         new( 660.0, 200 ), // E5
     ];
-
     private readonly (double Frequency, int Milliseconds)[] _startStopJingle =
     [
         (523.25, 100), // C5 
         (659.25, 100), // E5 
         (783.99, 100), // G5 
     ];
+    private readonly (double Frequency, int Milliseconds)[] _countdownJingle = [(440, 50)];
 
     public SDLSound()
     {
@@ -62,72 +61,36 @@ internal class SDLSound : IDisposable, ISound
         OpenAudioDevice(audioDeviceName);
     }
 
-    public async Task PlayCountdownJingleAsync()
-    {
-        SDL.SDL_PauseAudioDevice(_soundDeviceId, 0);
-        _soundFrequency = 440;
-        await Task.Delay(50);
-        _soundFrequency = 0; //reset
-        SDL.SDL_PauseAudioDevice(_soundDeviceId, 1);
-    }
-
-    public async Task PlayStartJingleAsyncAsync()
-    {
-        SDL.SDL_PauseAudioDevice(_soundDeviceId, 0);
-
-        for (int i = _startStopJingle.Length - 1; i >= 0; i--)
-        {
-            _soundFrequency = _startStopJingle[i].Frequency;
-            await Task.Delay(_startStopJingle[i].Milliseconds);
-        }
-        _soundFrequency = 0; //reset
-        SDL.SDL_PauseAudioDevice(_soundDeviceId, 1);
-    }
-
-    public async Task PlayEndJingleAsyncAsync()
-    {
-        SDL.SDL_PauseAudioDevice(_soundDeviceId, 0);
-
-        for (int i = 0; i < _startStopJingle.Length; i++)
-        {
-            _soundFrequency = _startStopJingle[i].Frequency;
-            await Task.Delay(_startStopJingle[i].Milliseconds);
-        }
-        _soundFrequency = 0; //reset
-        SDL.SDL_PauseAudioDevice(_soundDeviceId, 1);
-    }
-
-    public async Task PlayBreakJingleAsync()
-    {
-        SDL.SDL_PauseAudioDevice(_soundDeviceId, 0);
-
-        for (int i = _workBreakJingle.Length - 1; i >= 0; i--)
-        {
-            _soundFrequency = _workBreakJingle[i].Frequency;
-            await Task.Delay(_workBreakJingle[i].Milliseconds);
-        }
-        _soundFrequency = 0; //reset
-        SDL.SDL_PauseAudioDevice(_soundDeviceId, 1);
-    }
-
-    public async Task PlayWorkJingleAsync()
-    {
-        SDL.SDL_PauseAudioDevice(_soundDeviceId, 0);
-
-        for (int i = 0; i < _workBreakJingle.Length; i++)
-        {
-            _soundFrequency = _workBreakJingle[i].Frequency;
-            await Task.Delay(_workBreakJingle[i].Milliseconds);
-        }
-        _soundFrequency = 0; //reset
-        SDL.SDL_PauseAudioDevice(_soundDeviceId, 1);
-    }
+    public async Task PlayCountdownJingleAsync(CancellationToken ct) => await PlaySoundAsync(_countdownJingle, ct);
+    public async Task PlayStartJingleAsyncAsync(CancellationToken ct) => await PlaySoundAsync(_startStopJingle.Reverse(), ct);
+    public async Task PlayEndJingleAsyncAsync(CancellationToken ct) => await PlaySoundAsync(_startStopJingle, ct);
+    public async Task PlayBreakJingleAsync(CancellationToken ct) => await PlaySoundAsync(_workBreakJingle.Reverse(), ct);
+    public async Task PlayWorkJingleAsync(CancellationToken ct) => await PlaySoundAsync(_workBreakJingle, ct);
 
     public void Dispose()
     {
         SDL.SDL_PauseAudioDevice(_soundDeviceId, 1);
         SDL.SDL_CloseAudioDevice(_soundDeviceId);
         SDL.SDL_Quit();
+    }
+
+    private async Task PlaySoundAsync(IEnumerable<(double Frequency, int Milliseconds)> sound, CancellationToken ct)
+    {
+        try
+        {
+            SDL.SDL_PauseAudioDevice(_soundDeviceId, 0);
+            foreach (var (Frequency, Milliseconds) in sound)
+            {
+                _soundFrequency = Frequency;
+                await Task.Delay(Milliseconds, ct);
+            }
+        }
+        catch (TaskCanceledException) { }
+        finally
+        {
+            _soundFrequency = 0; //reset
+            SDL.SDL_PauseAudioDevice(_soundDeviceId, 1);
+        }
     }
 
     private void OpenAudioDevice(string deviceName)
@@ -173,10 +136,10 @@ internal class SDLSound : IDisposable, ISound
         }
     }
 
-    private short GetSoundDataForSample(int sample)
+    private short GetSoundDataForSample(int _)
     {
         short result = (short)(AMPLITUDE * Math.Sin(_samplingIndex));
-        _samplingIndex += (2.0d * Math.PI * _soundFrequency) / _haveAudioSpec.freq;
+        _samplingIndex += 2.0d * Math.PI * _soundFrequency / _haveAudioSpec.freq;
         //we want to wrap around after we make full circle
         if (_samplingIndex >= (2.0d * Math.PI))
         {

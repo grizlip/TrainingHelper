@@ -12,6 +12,7 @@ public class MainModel
     private CancellationTokenSource? _countdownCts = null;
     private readonly ISound _sound;
     private readonly bool _noSound = false;
+    private readonly TimeSpan _oneSecond = TimeSpan.FromSeconds(1);
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
     public MainModel(ISound sound)
     {
@@ -29,7 +30,7 @@ public class MainModel
         _countdownCts?.Dispose();
 
         _countdownCts = new CancellationTokenSource();
-        await _sound.PlayStartJingleAsyncAsync();
+        await PlaySoundAsync(_sound.PlayStartJingleAsyncAsync, _countdownCts.Token);
 
         for (int currentRepet = 0; currentRepet < repetCount; currentRepet++)
         {
@@ -39,20 +40,21 @@ public class MainModel
             }
             try
             {
-                if (!_noSound && currentRepet != 0)
+                if (currentRepet > 0)
                 {
-                    await _sound.PlayWorkJingleAsync();
+                    await PlaySoundAsync(_sound.PlayWorkJingleAsync, _countdownCts.Token);
                 }
-                await Countdown((int)work.TotalSeconds, true, currentRepet, _countdownCts.Token);
-                if (!_noSound)
-                {
-                    await _sound.PlayBreakJingleAsync();
-                }
-                await Countdown((int)@break.TotalSeconds, false, currentRepet, _countdownCts.Token);
+
+                await CountdownAsync((int)work.TotalSeconds, true, currentRepet, _countdownCts.Token);
+
+                await PlaySoundAsync(_sound.PlayBreakJingleAsync, _countdownCts.Token);
+
+                await CountdownAsync((int)@break.TotalSeconds, false, currentRepet, _countdownCts.Token);
             }
             catch (TaskCanceledException) { }
         }
-        await _sound.PlayEndJingleAsyncAsync();
+        await PlaySoundAsync(_sound.PlayEndJingleAsyncAsync, _countdownCts.Token);
+
     }
 
     public async Task StopCountdownAsync()
@@ -63,7 +65,7 @@ public class MainModel
         }
     }
 
-    private async Task Countdown(int totalSeconds, bool work, int currentRepet, CancellationToken token)
+    private async Task CountdownAsync(int totalSeconds, bool work, int currentRepet, CancellationToken token)
     {
         if (token.IsCancellationRequested)
         {
@@ -72,13 +74,13 @@ public class MainModel
         var secondsPassed = 0;
         while (secondsPassed < totalSeconds)
         {
-            if (!_noSound && totalSeconds - secondsPassed <= 3)
+            if (totalSeconds - secondsPassed <= 3)
             {
-                await Task.WhenAll(Task.Delay(1000, token), _sound.PlayCountdownJingleAsync());
+                await PlaySoundAsync(_sound.PlayCountdownJingleAsync, token, _oneSecond);
             }
             else
             {
-                await Task.Delay(1000, token);
+                await Task.Delay(_oneSecond, token);
             }
             secondsPassed++;
             if (token.IsCancellationRequested)
@@ -86,6 +88,17 @@ public class MainModel
                 return;
             }
             CountdownStateChanged?.Invoke(this, (secondsPassed, totalSeconds, currentRepet, work));
+        }
+    }
+
+    private async Task PlaySoundAsync(Func<CancellationToken, Task> playFunction, CancellationToken ct) => await (!_noSound ? playFunction(ct) : Task.CompletedTask);
+
+    private async Task PlaySoundAsync(Func<CancellationToken, Task> playFunction, CancellationToken ct, TimeSpan timeout)
+    {
+        if (!_noSound)
+        {
+            using CancellationTokenSource cts = new();
+            await Task.WhenAll(Task.Delay(timeout, ct).ContinueWith(t => cts.Cancel()), playFunction(cts.Token));
         }
     }
 }
