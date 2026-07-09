@@ -7,14 +7,24 @@
         x:Class="TrainingHelper.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="TrainingHelper.App">
-
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-        to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
-
-    <Grid RowDefinitions="Auto,Auto">
+    <Window.Resources>
+        <DataTemplate x:Key="image">
+            <Image Source="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Photo}"/>
+        </DataTemplate>
+        <DataTemplate x:Key="path">
+            <Path Stretch="Uniform" Width="100" Height="120" Fill="Black" >
+                <Interaction.Behaviors>
+                    <DataTriggerBehavior Binding="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Work}" ComparisonCondition="Equal" Value="false">
+                        <ChangePropertyAction PropertyName="Data" Value="{StaticResource Geometry_Break}" />
+                    </DataTriggerBehavior>
+                    <DataTriggerBehavior Binding="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Work}" ComparisonCondition="Equal" Value="true">
+                        <ChangePropertyAction PropertyName="Data" Value="{StaticResource Geometry_Work}" />
+                    </DataTriggerBehavior>
+                </Interaction.Behaviors>
+            </Path>
+        </DataTemplate>
+    </Window.Resources>
+    <Grid RowDefinitions="Auto,Auto, *">
         <StackPanel Grid.Row="0" Orientation="Horizontal">
             <Label VerticalAlignment="Center">Interval: </Label>
             <TimePicker UseSeconds="True" Margin="5"
@@ -36,7 +46,6 @@
         </StackPanel>
         <StackPanel Grid.Row="1">
             <StackPanel Orientation="Horizontal">
-
                 <Label VerticalAlignment="Center">Current repet: </Label>
                 <Label VerticalAlignment="Center" Content="{Binding CurrentRepet}"/>
                 <Label IsVisible="{Binding !IsEditEnabled}">
@@ -56,7 +65,16 @@
                           ShowProgressText="True"
                           ProgressTextFormat="{}{0}" />
         </StackPanel>
-
+        <ContentControl Grid.Row="2">
+            <Interaction.Behaviors>
+                <DataTriggerBehavior Binding="{Binding ShowImages}" ComparisonCondition="Equal" Value="false">
+                    <ChangePropertyAction PropertyName="ContentTemplate" Value="{StaticResource path}" />
+                </DataTriggerBehavior>
+                <DataTriggerBehavior Binding="{Binding ShowImages}" ComparisonCondition="Equal" Value="true">
+                    <ChangePropertyAction PropertyName="ContentTemplate" Value="{StaticResource image}" />
+                </DataTriggerBehavior>
+            </Interaction.Behaviors>
+        </ContentControl>
     </Grid>
 
 </Window>

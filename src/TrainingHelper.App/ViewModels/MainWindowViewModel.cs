@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using TrainingHelper.App.Model;
+using Microsoft.Extensions.Options;
+using TrainingHelper.App.Configuration;
+using TrainingHelper.App.Models;
 
 namespace TrainingHelper.App.ViewModels;
 
@@ -32,17 +36,34 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool _work = true;
 
-    private readonly MainModel _model;
+    [ObservableProperty]
+    private Bitmap? _photo;
 
-    public MainWindowViewModel(MainModel model)
+    [ObservableProperty]
+    private bool _showImages;
+
+    private readonly MainModel _model;
+    private readonly IOptions<Config> _configuration;
+    public MainWindowViewModel(MainModel model, IOptions<Config> configuration)
     {
+        _configuration = configuration;
+        ShowImages = _configuration.Value.Pictures.Any();
+
         _model = model;
         _model.CountdownStateChanged += OnCountdownStateChanged;
+        Interval = _configuration.Value.WorkTime;
+        Break = _configuration.Value.BreakTime;
     }
 
-    private void OnCountdownStateChanged(object? sender, (int SecondsPassed, int TotalSeconds, int CurrentRepet, bool Work) e)
+    private void OnCountdownStateChanged(object? sender, (int SecondsPassed, int TotalSeconds, int CurrentRepet, bool Work, string ImagPath) e)
     {
         Work = e.Work;
+        if (!string.IsNullOrEmpty(e.ImagPath))
+        {
+            Photo?.Dispose();
+            Photo = null;
+            Photo = new Bitmap(e.ImagPath);
+        }
         TotalSeconds = e.TotalSeconds;
         SecondsPassed = e.SecondsPassed;
         CurrentRepet = e.CurrentRepet + 1;
@@ -62,7 +83,7 @@ public partial class MainWindowViewModel : ObservableObject
         TotalSeconds = Interval.TotalSeconds;
         SecondsPassed = 0;
         IsEditEnabled = false;
-        await _model.StartCountdownAsync(Interval, Break, RepetCount);
+        await _model.StartCountdownAsync(Interval, Break, RepetCount, _configuration.Value.Pictures);
         UpdateGuiStateAfterStopCountdown();
     }
 
@@ -71,5 +92,8 @@ public partial class MainWindowViewModel : ObservableObject
         SecondsPassed = 0;
         IsEditEnabled = true;
         CurrentRepet = 1;
+        Work = true;
+        Photo?.Dispose();
+        Photo = null;
     }
 }

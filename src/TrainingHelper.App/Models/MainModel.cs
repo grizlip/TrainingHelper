@@ -1,19 +1,22 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using TrainingHelper.Common;
 
-namespace TrainingHelper.App.Model;
+namespace TrainingHelper.App.Models;
 
 public class MainModel
 {
-    public event EventHandler<(int SecondsPassed, int TotalSeconds, int CurrentRepet, bool Work)>? CountdownStateChanged;
+    public event EventHandler<(int SecondsPassed, int TotalSeconds, int CurrentRepet, bool Work, string ImagPath)>? CountdownStateChanged;
     private CancellationTokenSource? _countdownCts = null;
     private readonly ISound _sound;
     private readonly bool _noSound = false;
-    private readonly TimeSpan _oneSecond = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan _oneSecond = TimeSpan.FromSeconds(1);
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+
     public MainModel(ISound sound)
     {
         _sound = sound;
@@ -24,37 +27,60 @@ public class MainModel
         }
     }
 
-    public async Task StartCountdownAsync(TimeSpan work, TimeSpan @break, int repetCount)
+    public async Task StartCountdownAsync(TimeSpan workTime, TimeSpan breakTime, int repetCount, IEnumerable<string> images)
     {
         _countdownCts?.Cancel();
         _countdownCts?.Dispose();
 
         _countdownCts = new CancellationTokenSource();
         await PlaySoundAsync(_sound.PlayStartJingleAsyncAsync, _countdownCts.Token);
+        Func<TimeSpan, TimeSpan, int, Task<bool>> repetCountDownFuncAsync = images.Any() ?
+        async (work, @break, repet) =>
+            {
+                bool result = true;
+                foreach (var currentImage in images)
+                {
+                    if(!(result = await DoIntervalAsync(work, @break, repet, currentImage)))
+                    {
+                        break;
+                    }
+                }
+                return result;
+            }
+        :
+        async (work, @break, repet) => await DoIntervalAsync(work, @break, repet);
 
         for (int currentRepet = 0; currentRepet < repetCount; currentRepet++)
         {
-            if (_countdownCts.Token.IsCancellationRequested)
+            if (!await repetCountDownFuncAsync(workTime, breakTime, currentRepet))
             {
                 return;
             }
+        }
+
+        await PlaySoundAsync(_sound.PlayEndJingleAsyncAsync, _countdownCts.Token);
+
+        async Task<bool> DoIntervalAsync(TimeSpan workTime, TimeSpan breakTime, int currentRepet, string currentImage = "")
+        {
+            if (_countdownCts.Token.IsCancellationRequested)
+            {
+                return false;
+            }
+
             try
             {
-                if (currentRepet > 0)
-                {
-                    await PlaySoundAsync(_sound.PlayWorkJingleAsync, _countdownCts.Token);
-                }
+                await PlaySoundAsync(_sound.PlayWorkJingleAsync, _countdownCts.Token);
 
-                await CountdownAsync((int)work.TotalSeconds, true, currentRepet, _countdownCts.Token);
+                await CountdownAsync((int)workTime.TotalSeconds, true, currentRepet, currentImage, _countdownCts.Token);
 
                 await PlaySoundAsync(_sound.PlayBreakJingleAsync, _countdownCts.Token);
 
-                await CountdownAsync((int)@break.TotalSeconds, false, currentRepet, _countdownCts.Token);
+                await CountdownAsync((int)breakTime.TotalSeconds, false, currentRepet, currentImage, _countdownCts.Token);
             }
-            catch (TaskCanceledException) { }
-        }
-        await PlaySoundAsync(_sound.PlayEndJingleAsyncAsync, _countdownCts.Token);
+            catch (TaskCanceledException) { return false; }
 
+            return true;
+        }
     }
 
     public async Task StopCountdownAsync()
@@ -65,7 +91,7 @@ public class MainModel
         }
     }
 
-    private async Task CountdownAsync(int totalSeconds, bool work, int currentRepet, CancellationToken token)
+    private async Task CountdownAsync(int totalSeconds, bool work, int currentRepet, string imagePath, CancellationToken token)
     {
         if (token.IsCancellationRequested)
         {
@@ -87,7 +113,7 @@ public class MainModel
             {
                 return;
             }
-            CountdownStateChanged?.Invoke(this, (secondsPassed, totalSeconds, currentRepet, work));
+            CountdownStateChanged?.Invoke(this, (secondsPassed, totalSeconds, currentRepet, work, imagePath));
         }
     }
 

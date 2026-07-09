@@ -30,7 +30,6 @@ internal class SDLSound : IDisposable, ISound
 
     public SDLSound()
     {
-        // Initilizes SDL.
         if (SDL.SDL_Init(SDL.SDL_INIT_AUDIO) < 0)
         {
             _logger.Error($"Can't initialize SDL audio. {SDL.SDL_GetError()}");

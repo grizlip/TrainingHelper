@@ -5,7 +5,9 @@ using TrainingHelper.App.ViewModels;
 using TrainingHelper.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using TrainingHelper.Sdl;
-using TrainingHelper.App.Model;
+using Microsoft.Extensions.Configuration;
+using TrainingHelper.App.Configuration;
+using TrainingHelper.App.Models;
 
 namespace TrainingHelper.App;
 
@@ -19,6 +21,9 @@ public partial class App : Application
     public override void OnFrameworkInitializationCompleted()
     {
         var collection = new ServiceCollection();
+        var config = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: false, reloadOnChange: true).Build();
+        collection.AddSingleton<IConfiguration>(config);
+        collection.Configure<Config>(config);
         collection.AddSdlSound();
         collection.AddSingleton<MainModel>();
         collection.AddSingleton<MainWindowViewModel>();
