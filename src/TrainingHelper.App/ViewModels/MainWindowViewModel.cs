@@ -25,7 +25,7 @@ public partial class MainWindowViewModel : ObservableObject
     private int _secondsPassed = 0;
 
     [ObservableProperty]
-    private double _totalSeconds = 0;
+    private int _totalSeconds = 0;
 
     [ObservableProperty]
     private bool _isEditEnabled = true;
@@ -73,14 +73,14 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task StopCountdown()
     {
         await _model.StopCountdownAsync();
-        TotalSeconds = Interval.TotalSeconds;
+        TotalSeconds = (int)Interval.TotalSeconds;
         UpdateGuiStateAfterStopCountdown();
     }
 
     [RelayCommand()]
     private async Task StartCountdown()
     {
-        TotalSeconds = Interval.TotalSeconds;
+        TotalSeconds = (int)Interval.TotalSeconds;
         SecondsPassed = 0;
         IsEditEnabled = false;
         await _model.StartCountdownAsync(Interval, Break, RepetCount, _configuration.Value.Pictures);

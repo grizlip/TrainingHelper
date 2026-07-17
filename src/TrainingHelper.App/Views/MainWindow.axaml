@@ -1,25 +1,31 @@
 <Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:TrainingHelper.App.ViewModels"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="TrainingHelper.App.Views.MainWindow"
-        x:DataType="vm:MainWindowViewModel"
-        Title="TrainingHelper.App">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:TrainingHelper.App.ViewModels"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+    x:Class="TrainingHelper.App.Views.MainWindow"
+    x:DataType="vm:MainWindowViewModel"
+    Title="TrainingHelper.App">
     <Window.Resources>
-        <vm:SecondsToTimeConverter x:Key="SecondsToTimeConverter"/>
+        <vm:SecondsToTimeConverter x:Key="SecondsToTimeConverter" />
         <DataTemplate x:Key="image">
-            <Image Source="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Photo}"/>
+            <Image Source="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Photo}" />
         </DataTemplate>
         <DataTemplate x:Key="path">
-            <Path Stretch="Uniform" Width="100" Height="120" Fill="Black" >
+            <Path Stretch="Uniform" Width="100" Height="120" Fill="Black">
                 <Interaction.Behaviors>
-                    <DataTriggerBehavior Binding="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Work}" ComparisonCondition="Equal" Value="false">
-                        <ChangePropertyAction PropertyName="Data" Value="{StaticResource Geometry_Break}" />
+                    <DataTriggerBehavior
+                        Binding="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Work}"
+                        ComparisonCondition="Equal" Value="false">
+                        <ChangePropertyAction PropertyName="Data"
+                            Value="{StaticResource Geometry_Break}" />
                     </DataTriggerBehavior>
-                    <DataTriggerBehavior Binding="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Work}" ComparisonCondition="Equal" Value="true">
-                        <ChangePropertyAction PropertyName="Data" Value="{StaticResource Geometry_Work}" />
+                    <DataTriggerBehavior
+                        Binding="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Work}"
+                        ComparisonCondition="Equal" Value="true">
+                        <ChangePropertyAction PropertyName="Data"
+                            Value="{StaticResource Geometry_Work}" />
                     </DataTriggerBehavior>
                 </Interaction.Behaviors>
             </Path>
@@ -29,53 +35,62 @@
         <StackPanel Grid.Row="0" Orientation="Horizontal">
             <Label VerticalAlignment="Center">Interval: </Label>
             <TimePicker UseSeconds="True" Margin="5"
-                        ClockIdentifier="24HourClock"
-                        SelectedTime="{Binding Interval}"
-                        IsEnabled="{Binding IsEditEnabled}"/>
+                ClockIdentifier="24HourClock"
+                SelectedTime="{Binding Interval}"
+                IsEnabled="{Binding IsEditEnabled}" />
             <Label VerticalAlignment="Center">Break: </Label>
             <TimePicker UseSeconds="True" Margin="5"
-                        ClockIdentifier="24HourClock"
-                        SelectedTime="{Binding Break}"
-                        IsEnabled="{Binding IsEditEnabled}"/>
+                ClockIdentifier="24HourClock"
+                SelectedTime="{Binding Break}"
+                IsEnabled="{Binding IsEditEnabled}" />
             <Label VerticalAlignment="Center">Repet count: </Label>
             <NumericUpDown Value="{Binding RepetCount}"
-                           Minimum="1" Maximum="200"
-                           ShowButtonSpinner="False"
-                           AllowSpin="False"/>
+                Minimum="1" Maximum="200"
+                ShowButtonSpinner="False"
+                AllowSpin="False" />
             <Button Command="{Binding StartCountdownCommand}">Start</Button>
             <Button Command="{Binding StopCountdownCommand}">Stop</Button>
         </StackPanel>
         <StackPanel Grid.Row="1">
             <StackPanel Orientation="Horizontal">
                 <Label VerticalAlignment="Center">Current repet: </Label>
-                <Label VerticalAlignment="Center" Content="{Binding CurrentRepet}"/>
+                <Label VerticalAlignment="Center" Content="{Binding CurrentRepet}" />
                 <Label IsVisible="{Binding !IsEditEnabled}">
                     <Interaction.Behaviors>
                         <DataTrigger Binding="{Binding Work}" Value="True">
-                            <ChangePropertyAction PropertyName="Content" Value="Work"/>
+                            <ChangePropertyAction PropertyName="Content" Value="Work" />
                         </DataTrigger>
                         <DataTrigger Binding="{Binding Work}" Value="False">
-                            <ChangePropertyAction PropertyName="Content" Value="Break"/>
+                            <ChangePropertyAction PropertyName="Content" Value="Break" />
                         </DataTrigger>
                     </Interaction.Behaviors>
                 </Label>
             </StackPanel>
             <ProgressBar Margin="0 10" Height="20"
-                         Minimum="0" Maximum="{Binding TotalSeconds}"
-                         Value="{Binding SecondsPassed}"
-                         ShowProgressText="True"
-                         ProgressTextFormat="{Binding SecondsPassed, Converter={StaticResource SecondsToTimeConverter}}" />
+                Minimum="0" Maximum="{Binding TotalSeconds}"
+                Value="{Binding SecondsPassed}"
+                ShowProgressText="True">
+                <ProgressBar.ProgressTextFormat>
+                    <MultiBinding Converter="{StaticResource SecondsToTimeConverter}">
+                        <Binding Path="SecondsPassed" />
+                        <Binding Path="TotalSeconds" />
+                    </MultiBinding>
+                </ProgressBar.ProgressTextFormat>
+            </ProgressBar>
         </StackPanel>
         <ContentControl Grid.Row="2">
             <Interaction.Behaviors>
-                <DataTriggerBehavior Binding="{Binding ShowImages}" ComparisonCondition="Equal" Value="false">
-                    <ChangePropertyAction PropertyName="ContentTemplate" Value="{StaticResource path}" />
+                <DataTriggerBehavior Binding="{Binding ShowImages}" ComparisonCondition="Equal"
+                    Value="false">
+                    <ChangePropertyAction PropertyName="ContentTemplate"
+                        Value="{StaticResource path}" />
                 </DataTriggerBehavior>
-                <DataTriggerBehavior Binding="{Binding ShowImages}" ComparisonCondition="Equal" Value="true">
-                    <ChangePropertyAction PropertyName="ContentTemplate" Value="{StaticResource image}" />
+                <DataTriggerBehavior Binding="{Binding ShowImages}" ComparisonCondition="Equal"
+                    Value="true">
+                    <ChangePropertyAction PropertyName="ContentTemplate"
+                        Value="{StaticResource image}" />
                 </DataTriggerBehavior>
             </Interaction.Behaviors>
         </ContentControl>
     </Grid>
-
 </Window>

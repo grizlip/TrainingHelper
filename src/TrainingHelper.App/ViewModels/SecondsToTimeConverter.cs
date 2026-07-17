@@ -1,19 +1,31 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using Avalonia.Data.Converters;
+using NLog;
 
 namespace TrainingHelper.App.ViewModels;
 
-public class SecondsToTimeConverter : IValueConverter
+public class SecondsToTimeConverter : IMultiValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+    private static readonly string timeSpanFormat = @"hh\:mm\:ss";
+    public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is int seconds)
+        if (values.Count == 2)
         {
-            return TimeSpan.FromSeconds(seconds).ToString(@"hh\:mm\:ss");
+            if (values[0] is int seconds && values[1] is int totalSeconds)
+            {
+                return string.Format("{0} / {1}",TimeSpan.FromSeconds(seconds).ToString(timeSpanFormat),
+                                                 TimeSpan.FromSeconds(totalSeconds - seconds).ToString(timeSpanFormat));
+            }
+            logger.Trace($"Expected two {typeof(int)}. Got 0 => {values[0]?.GetType()} 1 =>>{values[1]?.GetType()}  ");
         }
-        throw new ArgumentException($"Expected int, got {value?.GetType()}");
+        else
+        {
+            logger.Trace($"Expected two values. Got: {values?.Count}");
+        }
+        return string.Empty;
     }
 
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => throw new NotImplementedException();
 }
