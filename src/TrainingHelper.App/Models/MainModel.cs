@@ -40,7 +40,7 @@ public class MainModel
                 bool result = true;
                 foreach (var currentImage in images)
                 {
-                    if(!(result = await DoIntervalAsync(work, @break, repet, currentImage)))
+                    if (!(result = await DoIntervalAsync(work, @break, repet, currentImage)))
                     {
                         break;
                     }
@@ -93,38 +93,22 @@ public class MainModel
 
     private async Task CountdownAsync(int totalSeconds, bool work, int currentRepet, string imagePath, CancellationToken token)
     {
-        if (token.IsCancellationRequested)
-        {
-            return;
-        }
+        using PeriodicTimer periodicTimer = new(_oneSecond);
         var secondsPassed = 0;
-        while (secondsPassed < totalSeconds)
+        try
         {
-            if (totalSeconds - secondsPassed <= 3)
+            while (await periodicTimer.WaitForNextTickAsync(token) && secondsPassed < totalSeconds)
             {
-                await PlaySoundAsync(_sound.PlayCountdownJingleAsync, token, _oneSecond);
+                if (totalSeconds - secondsPassed <= 3)
+                {
+                    await PlaySoundAsync(_sound.PlayCountdownJingleAsync, token);
+                }
+                secondsPassed++;
+                CountdownStateChanged?.Invoke(this, (secondsPassed, totalSeconds, currentRepet, work, imagePath));
             }
-            else
-            {
-                await Task.Delay(_oneSecond, token);
-            }
-            secondsPassed++;
-            if (token.IsCancellationRequested)
-            {
-                return;
-            }
-            CountdownStateChanged?.Invoke(this, (secondsPassed, totalSeconds, currentRepet, work, imagePath));
         }
+        catch (OperationCanceledException) { /*do nothing*/ }
     }
 
     private async Task PlaySoundAsync(Func<CancellationToken, Task> playFunction, CancellationToken ct) => await (!_noSound ? playFunction(ct) : Task.CompletedTask);
-
-    private async Task PlaySoundAsync(Func<CancellationToken, Task> playFunction, CancellationToken ct, TimeSpan timeout)
-    {
-        if (!_noSound)
-        {
-            using CancellationTokenSource cts = new();
-            await Task.WhenAll(Task.Delay(timeout, ct).ContinueWith(t => cts.Cancel()), playFunction(cts.Token));
-        }
-    }
 }
