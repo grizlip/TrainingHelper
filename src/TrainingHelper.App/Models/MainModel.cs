@@ -15,6 +15,7 @@ public class MainModel
     private readonly ISound _sound;
     private readonly bool _noSound = false;
     private static readonly TimeSpan _oneSecond = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan _maxBeepTime = TimeSpan.FromMilliseconds(200);
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
     public MainModel(ISound sound)
@@ -93,18 +94,24 @@ public class MainModel
 
     private async Task CountdownAsync(int totalSeconds, bool work, int currentRepet, string imagePath, CancellationToken token)
     {
-        using PeriodicTimer periodicTimer = new(_oneSecond);
         var secondsPassed = 0;
+        using PeriodicTimer periodicTimer = new(_oneSecond);
+
         try
         {
             while (await periodicTimer.WaitForNextTickAsync(token) && secondsPassed < totalSeconds)
             {
-                if (totalSeconds - secondsPassed <= 3)
-                {
-                    await PlaySoundAsync(_sound.PlayCountdownJingleAsync, token);
-                }
                 secondsPassed++;
                 CountdownStateChanged?.Invoke(this, (secondsPassed, totalSeconds, currentRepet, work, imagePath));
+                
+                if (totalSeconds - secondsPassed <= 3)
+                {
+                    using var oneSecondCts = new CancellationTokenSource();
+                    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, oneSecondCts.Token);
+                    oneSecondCts.CancelAfter(_maxBeepTime);
+                    await PlaySoundAsync(_sound.PlayCountdownJingleAsync, linkedCts.Token);
+                }
+                
             }
         }
         catch (OperationCanceledException) { /*do nothing*/ }
