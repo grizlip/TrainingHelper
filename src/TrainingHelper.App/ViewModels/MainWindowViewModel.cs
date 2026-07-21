@@ -55,6 +55,11 @@ public partial class MainWindowViewModel : ObservableObject
         Break = _configuration.Value.BreakTime;
     }
 
+    partial void OnIntervalChanged(TimeSpan value)
+    {
+        TotalSeconds = (int)value.TotalSeconds;
+    }
+
     private void OnCountdownStateChanged(object? sender, (int SecondsPassed, int TotalSeconds, int CurrentRepet, bool Work, string ImagPath) e)
     {
         Work = e.Work;
