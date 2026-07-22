@@ -14,6 +14,7 @@ public class MainModel
     private CancellationTokenSource? _countdownCts = null;
     private readonly ISound _sound;
     private readonly bool _noSound = false;
+    private bool _pause = false;
     private static readonly TimeSpan _oneSecond = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan _maxBeepTime = TimeSpan.FromMilliseconds(200);
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
@@ -92,6 +93,12 @@ public class MainModel
         }
     }
 
+
+    public void  PauseResumeCountdown()
+    {
+        _pause = !_pause;
+    }
+
     private async Task CountdownAsync(int totalSeconds, bool work, int currentRepet, string imagePath, CancellationToken token)
     {
         var secondsPassed = 0;
@@ -101,9 +108,13 @@ public class MainModel
         {
             while (await periodicTimer.WaitForNextTickAsync(token) && secondsPassed < totalSeconds)
             {
+                if(_pause)
+                {
+                    continue;
+                }
                 secondsPassed++;
                 CountdownStateChanged?.Invoke(this, (secondsPassed, totalSeconds, currentRepet, work, imagePath));
-                
+
                 if (totalSeconds - secondsPassed <= 3)
                 {
                     using var oneSecondCts = new CancellationTokenSource();
@@ -111,7 +122,7 @@ public class MainModel
                     oneSecondCts.CancelAfter(_maxBeepTime);
                     await PlaySoundAsync(_sound.PlayCountdownJingleAsync, linkedCts.Token);
                 }
-                
+
             }
         }
         catch (OperationCanceledException) { /*do nothing*/ }

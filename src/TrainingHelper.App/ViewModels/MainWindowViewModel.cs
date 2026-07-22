@@ -28,7 +28,9 @@ public partial class MainWindowViewModel : ObservableObject
     private int _totalSeconds = 0;
 
     [ObservableProperty]
-    private bool _isEditEnabled = true;
+    [NotifyCanExecuteChangedFor(nameof(PauseResumeCountdownCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StopCountdownCommand))]
+    private bool _isCountdownInProgress = false;
 
     [ObservableProperty]
     private int _currentRepet = 1;
@@ -41,7 +43,6 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _showImages;
-
     private readonly MainModel _model;
     private readonly IOptions<Config> _configuration;
     public MainWindowViewModel(MainModel model, IOptions<Config> configuration)
@@ -74,7 +75,7 @@ public partial class MainWindowViewModel : ObservableObject
         CurrentRepet = e.CurrentRepet + 1;
     }
 
-    [RelayCommand()]
+    [RelayCommand(CanExecute = nameof(IsCountdownInProgress))]
     private async Task StopCountdown()
     {
         await _model.StopCountdownAsync();
@@ -87,15 +88,20 @@ public partial class MainWindowViewModel : ObservableObject
     {
         TotalSeconds = (int)Interval.TotalSeconds;
         SecondsPassed = 0;
-        IsEditEnabled = false;
+        IsCountdownInProgress = true;
         await _model.StartCountdownAsync(Interval, Break, RepetCount, _configuration.Value.Pictures);
         UpdateGuiStateAfterStopCountdown();
     }
 
+    [RelayCommand(CanExecute = nameof(IsCountdownInProgress))]
+    private void PauseResumeCountdown()
+    {
+        _model.PauseResumeCountdown();
+    }
     private void UpdateGuiStateAfterStopCountdown()
     {
         SecondsPassed = 0;
-        IsEditEnabled = true;
+        IsCountdownInProgress = false;
         CurrentRepet = 1;
         Work = true;
         Photo?.Dispose();

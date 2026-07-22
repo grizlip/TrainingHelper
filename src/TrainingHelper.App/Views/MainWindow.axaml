@@ -37,25 +37,26 @@
             <TimePicker UseSeconds="True" Margin="5"
                 ClockIdentifier="24HourClock"
                 SelectedTime="{Binding Interval}"
-                IsEnabled="{Binding IsEditEnabled}" />
+                IsEnabled="{Binding !IsCountdownInProgress}" />
             <Label VerticalAlignment="Center">Break: </Label>
             <TimePicker UseSeconds="True" Margin="5"
                 ClockIdentifier="24HourClock"
                 SelectedTime="{Binding Break}"
-                IsEnabled="{Binding IsEditEnabled}" />
+                IsEnabled="{Binding !IsCountdownInProgress}" />
             <Label VerticalAlignment="Center">Repet count: </Label>
             <NumericUpDown Value="{Binding RepetCount}"
                 Minimum="1" Maximum="200"
                 ShowButtonSpinner="False"
                 AllowSpin="False" />
             <Button Command="{Binding StartCountdownCommand}">Start</Button>
+            <Button Command="{Binding PauseResumeCountdownCommand}">Pause/Resume</Button>
             <Button Command="{Binding StopCountdownCommand}">Stop</Button>
         </StackPanel>
         <StackPanel Grid.Row="1">
             <StackPanel Orientation="Horizontal">
                 <Label VerticalAlignment="Center">Current repet: </Label>
                 <Label VerticalAlignment="Center" Content="{Binding CurrentRepet}" />
-                <Label IsVisible="{Binding !IsEditEnabled}">
+                <Label IsVisible="{Binding IsCountdownInProgress}">
                     <Interaction.Behaviors>
                         <DataTrigger Binding="{Binding Work}" Value="True">
                             <ChangePropertyAction PropertyName="Content" Value="Work" />
