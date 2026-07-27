@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using NLog;
+using TrainingHelper.App.Configuration;
 using TrainingHelper.Common;
 
 namespace TrainingHelper.App.Models;
@@ -15,13 +17,15 @@ public class MainModel
     private readonly ISound _sound;
     private readonly bool _noSound = false;
     private bool _pause = false;
+    private readonly TimeSpan _countdownStart = TimeSpan.Zero;
     private static readonly TimeSpan _oneSecond = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan _maxBeepTime = TimeSpan.FromMilliseconds(200);
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-    public MainModel(ISound sound)
+    public MainModel(ISound sound, IOptions<ModelConfig> configuration)
     {
         _sound = sound;
+        _countdownStart = configuration.Value.CountdownStart;
         if (_sound.SoundDevicesNames.Count == 0)
         {
             _logger.Warn($"Can't find any sound devices names. There will be no sound.");
@@ -115,7 +119,7 @@ public class MainModel
                 secondsPassed++;
                 CountdownStateChanged?.Invoke(this, (secondsPassed, totalSeconds, currentRepet, work, imagePath));
 
-                if (totalSeconds - secondsPassed <= 3)
+                if (totalSeconds - secondsPassed <= _countdownStart.TotalSeconds)
                 {
                     using var oneSecondCts = new CancellationTokenSource();
                     using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, oneSecondCts.Token);

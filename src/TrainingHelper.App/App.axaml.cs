@@ -24,6 +24,7 @@ public partial class App : Application
         var config = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: false, reloadOnChange: true).Build();
         collection.AddSingleton<IConfiguration>(config);
         collection.Configure<Config>(config);
+        collection.Configure<ModelConfig>(config);
         collection.AddSdlSound();
         collection.AddSingleton<MainModel>();
         collection.AddSingleton<MainWindowViewModel>();
