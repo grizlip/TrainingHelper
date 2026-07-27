@@ -71,13 +71,13 @@ public class MainModel
 
             try
             {
-                await PlaySoundAsync(_sound.PlayWorkJingleAsync, _countdownCts.Token);
-
-                await CountdownAsync((int)workTime.TotalSeconds, true, currentRepet, currentImage, _countdownCts.Token);
-
-                await PlaySoundAsync(_sound.PlayBreakJingleAsync, _countdownCts.Token);
-
-                await CountdownAsync((int)breakTime.TotalSeconds, false, currentRepet, currentImage, _countdownCts.Token);
+                if(!await PlaySoundAsync(_sound.PlayWorkJingleAsync, _countdownCts.Token) ||
+                   !await CountdownAsync((int)workTime.TotalSeconds, true, currentRepet, currentImage, _countdownCts.Token) || 
+                   !await PlaySoundAsync(_sound.PlayBreakJingleAsync, _countdownCts.Token) || 
+                   !await CountdownAsync((int)breakTime.TotalSeconds, false, currentRepet, currentImage, _countdownCts.Token))
+                {
+                    return false;
+                }
             }
             catch (TaskCanceledException) { return false; }
 
@@ -94,12 +94,12 @@ public class MainModel
     }
 
 
-    public void  PauseResumeCountdown()
+    public void PauseResumeCountdown()
     {
         _pause = !_pause;
     }
 
-    private async Task CountdownAsync(int totalSeconds, bool work, int currentRepet, string imagePath, CancellationToken token)
+    private async Task<bool> CountdownAsync(int totalSeconds, bool work, int currentRepet, string imagePath, CancellationToken token)
     {
         var secondsPassed = 0;
         using PeriodicTimer periodicTimer = new(_oneSecond);
@@ -108,7 +108,7 @@ public class MainModel
         {
             while (await periodicTimer.WaitForNextTickAsync(token) && secondsPassed < totalSeconds)
             {
-                if(_pause)
+                if (_pause)
                 {
                     continue;
                 }
@@ -122,11 +122,16 @@ public class MainModel
                     oneSecondCts.CancelAfter(_maxBeepTime);
                     await PlaySoundAsync(_sound.PlayCountdownJingleAsync, linkedCts.Token);
                 }
-
             }
         }
-        catch (OperationCanceledException) { /*do nothing*/ }
+        catch (OperationCanceledException) { return false; }
+
+        return true;
     }
 
-    private async Task PlaySoundAsync(Func<CancellationToken, Task> playFunction, CancellationToken ct) => await (!_noSound ? playFunction(ct) : Task.CompletedTask);
+    private async Task<bool> PlaySoundAsync(Func<CancellationToken, Task> playFunction, CancellationToken ct) 
+    {
+         await (!_noSound ? playFunction(ct) : Task.CompletedTask);
+         return !ct.IsCancellationRequested;
+    }
 }
