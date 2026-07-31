@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Options;
+using NLog;
 using TrainingHelper.App.Configuration;
 using TrainingHelper.App.Models;
 
@@ -43,17 +45,50 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _showImages;
+
+    [ObservableProperty]
+    private bool _hasAudioDevices;
+
+    [ObservableProperty]
+    private ObservableCollection<string> _audioDevices = new();
+
+    [ObservableProperty]
+    private string? _selectedAudioDevice;
     private readonly MainModel _model;
     private readonly IOptions<Config> _configuration;
+    private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+    
     public MainWindowViewModel(MainModel model, IOptions<Config> configuration)
     {
         _configuration = configuration;
         ShowImages = _configuration.Value.Pictures.Any();
-
         _model = model;
         _model.CountdownStateChanged += OnCountdownStateChanged;
         Interval = _configuration.Value.WorkTime;
         Break = _configuration.Value.BreakTime;
+
+        AudioDevices = new ObservableCollection<string>(_model.AudioDevices);
+        HasAudioDevices = AudioDevices.Count > 0;
+        if (HasAudioDevices)
+        {
+            if (AudioDevices.Count < _configuration.Value.DefaultAudioDeviceSelection)
+            {
+                SelectedAudioDevice = AudioDevices[_configuration.Value.DefaultAudioDeviceSelection];
+            }
+            else
+            {
+                _logger.Warn($"There is no {_configuration.Value.DefaultAudioDeviceSelection} devices. Taking the first one from the list");
+                SelectedAudioDevice = AudioDevices[0];
+            }
+        }
+    }
+
+    partial void OnSelectedAudioDeviceChanged(string? value)
+    {
+        if (!string.IsNullOrEmpty(value))
+        {
+            _model.ChangeSelectedAudioDevice(value);
+        }
     }
 
     partial void OnIntervalChanged(TimeSpan value)

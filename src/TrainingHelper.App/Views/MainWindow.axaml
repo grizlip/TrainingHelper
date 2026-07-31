@@ -32,26 +32,32 @@
         </DataTemplate>
     </Window.Resources>
     <Grid RowDefinitions="Auto,Auto, *">
-        <StackPanel Grid.Row="0" Orientation="Horizontal">
-            <Label VerticalAlignment="Center">Interval: </Label>
-            <TimePicker UseSeconds="True" Margin="5"
+        <DockPanel Grid.Row="0" LastChildFill="True">
+            <Label DockPanel.Dock="Left" VerticalAlignment="Center">Interval: </Label>
+            <TimePicker DockPanel.Dock="Left" UseSeconds="True" Margin="5"
                 ClockIdentifier="24HourClock"
                 SelectedTime="{Binding Interval}"
                 IsEnabled="{Binding !IsCountdownInProgress}" />
-            <Label VerticalAlignment="Center">Break: </Label>
-            <TimePicker UseSeconds="True" Margin="5"
+            <Label DockPanel.Dock="Left" VerticalAlignment="Center">Break: </Label>
+            <TimePicker DockPanel.Dock="Left" UseSeconds="True" Margin="5"
                 ClockIdentifier="24HourClock"
                 SelectedTime="{Binding Break}"
                 IsEnabled="{Binding !IsCountdownInProgress}" />
-            <Label VerticalAlignment="Center">Repet count: </Label>
-            <NumericUpDown Value="{Binding RepetCount}"
+            <Label DockPanel.Dock="Left" VerticalAlignment="Center">Repet count: </Label>
+            <NumericUpDown DockPanel.Dock="Left" Value="{Binding RepetCount}"
+                VerticalContentAlignment="Center" 
                 Minimum="1" Maximum="200"
                 ShowButtonSpinner="False"
                 AllowSpin="False" />
-            <Button Command="{Binding StartCountdownCommand}">Start</Button>
-            <Button Command="{Binding PauseResumeCountdownCommand}">Pause/Resume</Button>
-            <Button Command="{Binding StopCountdownCommand}">Stop</Button>
-        </StackPanel>
+            <Button DockPanel.Dock="Left" Command="{Binding StartCountdownCommand}">Start</Button>
+            <Button DockPanel.Dock="Left" Command="{Binding PauseResumeCountdownCommand}">Pause/Resume</Button>
+            <Button DockPanel.Dock="Left" Command="{Binding StopCountdownCommand}">Stop</Button>
+            <Label DockPanel.Dock="Left" VerticalAlignment="Center">Audio device: </Label>
+            <ComboBox DockPanel.Dock="Left" Margin="5" MinWidth="220" HorizontalAlignment="Stretch"
+                     ItemsSource="{Binding AudioDevices}"
+                     SelectedItem="{Binding SelectedAudioDevice}"
+                     IsEnabled="{Binding HasAudioDevices}" />
+        </DockPanel>
         <StackPanel Grid.Row="1">
             <StackPanel Orientation="Horizontal">
                 <Label VerticalAlignment="Center">Current repet: </Label>

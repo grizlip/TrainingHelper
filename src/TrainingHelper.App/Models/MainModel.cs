@@ -13,6 +13,7 @@ namespace TrainingHelper.App.Models;
 public class MainModel
 {
     public event EventHandler<(int SecondsPassed, int TotalSeconds, int CurrentRepet, bool Work, string ImagPath)>? CountdownStateChanged;
+    public IReadOnlyCollection<string> AudioDevices => _sound.SoundDevicesNames;
     private CancellationTokenSource? _countdownCts = null;
     private readonly ISound _sound;
     private readonly bool _noSound = false;
@@ -21,7 +22,6 @@ public class MainModel
     private static readonly TimeSpan _oneSecond = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan _maxBeepTime = TimeSpan.FromMilliseconds(200);
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-
     public MainModel(ISound sound, IOptions<ModelConfig> configuration)
     {
         _sound = sound;
@@ -31,6 +31,11 @@ public class MainModel
             _logger.Warn($"Can't find any sound devices names. There will be no sound.");
             _noSound = true;
         }
+    }
+
+    public void ChangeSelectedAudioDevice(string deviceName)
+    {
+        _sound.ChangeAudiDevice(deviceName);
     }
 
     public async Task StartCountdownAsync(TimeSpan workTime, TimeSpan breakTime, int repetCount, IEnumerable<string> images)
