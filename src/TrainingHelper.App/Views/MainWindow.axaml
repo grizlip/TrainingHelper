@@ -1,62 +1,72 @@
 <Window xmlns="https://github.com/avaloniaui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:vm="using:TrainingHelper.App.ViewModels"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-    x:Class="TrainingHelper.App.Views.MainWindow"
-    x:DataType="vm:MainWindowViewModel"
-    Title="TrainingHelper.App">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:TrainingHelper.App.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="TrainingHelper.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="TrainingHelper.App">
     <Window.Resources>
-        <vm:SecondsToTimeConverter x:Key="SecondsToTimeConverter" />
-        <DataTemplate x:Key="image">
-            <Image Source="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Photo}" />
-        </DataTemplate>
-        <DataTemplate x:Key="path">
-            <Path Stretch="Uniform" Width="100" Height="120" Fill="Black">
-                <Interaction.Behaviors>
-                    <DataTriggerBehavior
-                        Binding="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Work}"
-                        ComparisonCondition="Equal" Value="false">
-                        <ChangePropertyAction PropertyName="Data"
-                            Value="{StaticResource Geometry_Break}" />
-                    </DataTriggerBehavior>
-                    <DataTriggerBehavior
-                        Binding="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Work}"
-                        ComparisonCondition="Equal" Value="true">
-                        <ChangePropertyAction PropertyName="Data"
-                            Value="{StaticResource Geometry_Work}" />
-                    </DataTriggerBehavior>
-                </Interaction.Behaviors>
-            </Path>
-        </DataTemplate>
+        <ResourceDictionary >
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key='Light'>
+                    <SolidColorBrush x:Key='PathBrush'>Black</SolidColorBrush>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key='Dark'>
+                    <SolidColorBrush x:Key='PathBrush'>Yellow</SolidColorBrush>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+            <vm:SecondsToTimeConverter x:Key="SecondsToTimeConverter" />
+            <DataTemplate x:Key="image">
+                <Image Source="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Photo}" />
+            </DataTemplate>
+            <DataTemplate x:Key="path">
+                <Path Stretch="Uniform" Width="100" Height="120" Fill="{DynamicResource PathBrush}">
+                    <Interaction.Behaviors>
+                        <DataTriggerBehavior
+                            Binding="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Work}"
+                            ComparisonCondition="Equal" Value="false">
+                            <ChangePropertyAction PropertyName="Data"
+                                                  Value="{StaticResource Geometry_Break}" />
+                        </DataTriggerBehavior>
+                        <DataTriggerBehavior
+                            Binding="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Work}"
+                            ComparisonCondition="Equal" Value="true">
+                            <ChangePropertyAction PropertyName="Data"
+                                                  Value="{StaticResource Geometry_Work}" />
+                        </DataTriggerBehavior>
+                    </Interaction.Behaviors>
+                </Path>
+            </DataTemplate>
+        </ResourceDictionary>
     </Window.Resources>
     <Grid RowDefinitions="Auto,Auto, *">
         <DockPanel Grid.Row="0" LastChildFill="True">
             <Label DockPanel.Dock="Left" VerticalAlignment="Center">Interval: </Label>
             <TimePicker DockPanel.Dock="Left" UseSeconds="True" Margin="5"
-                ClockIdentifier="24HourClock"
-                SelectedTime="{Binding Interval}"
-                IsEnabled="{Binding !IsCountdownInProgress}" />
+                        ClockIdentifier="24HourClock"
+                        SelectedTime="{Binding Interval}"
+                        IsEnabled="{Binding !IsCountdownInProgress}" />
             <Label DockPanel.Dock="Left" VerticalAlignment="Center">Break: </Label>
             <TimePicker DockPanel.Dock="Left" UseSeconds="True" Margin="5"
-                ClockIdentifier="24HourClock"
-                SelectedTime="{Binding Break}"
-                IsEnabled="{Binding !IsCountdownInProgress}" />
+                        ClockIdentifier="24HourClock"
+                        SelectedTime="{Binding Break}"
+                        IsEnabled="{Binding !IsCountdownInProgress}" />
             <Label DockPanel.Dock="Left" VerticalAlignment="Center">Repet count: </Label>
             <NumericUpDown DockPanel.Dock="Left" Value="{Binding RepetCount}"
-                VerticalContentAlignment="Center" 
-                Minimum="1" Maximum="200"
-                ShowButtonSpinner="False"
-                AllowSpin="False" />
+                           VerticalContentAlignment="Center"
+                           Minimum="1" Maximum="200"
+                           ShowButtonSpinner="False"
+                           AllowSpin="False" />
             <Button DockPanel.Dock="Left" Command="{Binding StartCountdownCommand}">Start</Button>
             <Button DockPanel.Dock="Left" Command="{Binding PauseResumeCountdownCommand}">Pause/Resume</Button>
             <Button DockPanel.Dock="Left" Command="{Binding StopCountdownCommand}">Stop</Button>
             <Label DockPanel.Dock="Left" VerticalAlignment="Center">Audio device: </Label>
             <ComboBox DockPanel.Dock="Left" Margin="5" MinWidth="220" HorizontalAlignment="Stretch"
-                     ItemsSource="{Binding AudioDevices}"
-                     SelectedItem="{Binding SelectedAudioDevice}"
-                     IsEnabled="{Binding HasAudioDevices}" />
+                      ItemsSource="{Binding AudioDevices}"
+                      SelectedItem="{Binding SelectedAudioDevice}"
+                      IsEnabled="{Binding HasAudioDevices}" />
         </DockPanel>
         <StackPanel Grid.Row="1">
             <StackPanel Orientation="Horizontal">
@@ -74,9 +84,9 @@
                 </Label>
             </StackPanel>
             <ProgressBar Margin="0 10" Height="20"
-                Minimum="0" Maximum="{Binding TotalSeconds}"
-                Value="{Binding SecondsPassed}"
-                ShowProgressText="True">
+                         Minimum="0" Maximum="{Binding TotalSeconds}"
+                         Value="{Binding SecondsPassed}"
+                         ShowProgressText="True">
                 <ProgressBar.ProgressTextFormat>
                     <MultiBinding Converter="{StaticResource SecondsToTimeConverter}">
                         <Binding Path="SecondsPassed" />
@@ -88,14 +98,14 @@
         <ContentControl Grid.Row="2">
             <Interaction.Behaviors>
                 <DataTriggerBehavior Binding="{Binding ShowImages}" ComparisonCondition="Equal"
-                    Value="false">
+                                     Value="false">
                     <ChangePropertyAction PropertyName="ContentTemplate"
-                        Value="{StaticResource path}" />
+                                          Value="{StaticResource path}" />
                 </DataTriggerBehavior>
                 <DataTriggerBehavior Binding="{Binding ShowImages}" ComparisonCondition="Equal"
-                    Value="true">
+                                     Value="true">
                     <ChangePropertyAction PropertyName="ContentTemplate"
-                        Value="{StaticResource image}" />
+                                          Value="{StaticResource image}" />
                 </DataTriggerBehavior>
             </Interaction.Behaviors>
         </ContentControl>
