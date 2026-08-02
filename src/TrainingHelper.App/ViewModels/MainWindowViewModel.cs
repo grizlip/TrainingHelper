@@ -57,7 +57,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly MainModel _model;
     private readonly IOptions<Config> _configuration;
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-    
+
     public MainWindowViewModel(MainModel model, IOptions<Config> configuration)
     {
         _configuration = configuration;
@@ -71,9 +71,9 @@ public partial class MainWindowViewModel : ObservableObject
         HasAudioDevices = AudioDevices.Count > 0;
         if (HasAudioDevices)
         {
-            if (AudioDevices.Count < _configuration.Value.DefaultAudioDeviceSelection)
+            if (AudioDevices.Contains(_configuration.Value.DefaultAudioDeviceSelection))
             {
-                SelectedAudioDevice = AudioDevices[_configuration.Value.DefaultAudioDeviceSelection];
+                SelectedAudioDevice = _configuration.Value.DefaultAudioDeviceSelection;
             }
             else
             {
@@ -85,9 +85,15 @@ public partial class MainWindowViewModel : ObservableObject
 
     partial void OnSelectedAudioDeviceChanged(string? value)
     {
-        if (!string.IsNullOrEmpty(value))
+        if (!string.IsNullOrEmpty(value) && AudioDevices.Contains(value))
         {
             _model.ChangeSelectedAudioDevice(value);
+            _configuration.Value.DefaultAudioDeviceSelection = value;
+            App.UpdateDefaultAudioDeviceSelection(value);
+        }
+        else
+        {
+            _logger.Warn($"Wrong value of requested audio device: {value}");
         }
     }
 

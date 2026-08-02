@@ -100,6 +100,7 @@ public class MainModel
         {
             await _countdownCts.CancelAsync();
         }
+        _pause = false;
     }
 
 

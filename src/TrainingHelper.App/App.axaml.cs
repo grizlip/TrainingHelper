@@ -8,23 +8,39 @@ using TrainingHelper.Sdl;
 using Microsoft.Extensions.Configuration;
 using TrainingHelper.App.Configuration;
 using TrainingHelper.App.Models;
+using NLog;
 
 namespace TrainingHelper.App;
 
 public partial class App : Application
 {
+    private static IConfigurationRoot? _configurationRoot;
+    private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
     }
 
+
+    public static void UpdateDefaultAudioDeviceSelection(string defaultAudioDevice)
+    {
+        if (_configurationRoot != null)
+        {
+            _configurationRoot.UpdateConfiguration(defaultAudioDevice);
+        }
+        else
+        {
+            _logger.Warn("ConfigurationRoot is null. Configuration will not be updated.");
+        }
+    }
+
     public override void OnFrameworkInitializationCompleted()
     {
         var collection = new ServiceCollection();
-        var config = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: false, reloadOnChange: true).Build();
-        collection.AddSingleton<IConfiguration>(config);
-        collection.Configure<Config>(config);
-        collection.Configure<ModelConfig>(config);
+        _configurationRoot = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: false, reloadOnChange: true).Build();
+        collection.AddSingleton<IConfiguration>(_configurationRoot);
+        collection.Configure<Config>(_configurationRoot);
+        collection.Configure<ModelConfig>(_configurationRoot);
         collection.AddSdlSound();
         collection.AddSingleton<MainModel>();
         collection.AddSingleton<MainWindowViewModel>();
