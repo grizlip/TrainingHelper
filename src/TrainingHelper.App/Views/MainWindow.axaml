@@ -58,7 +58,8 @@
                            VerticalContentAlignment="Center"
                            Minimum="1" Maximum="200"
                            ShowButtonSpinner="False"
-                           AllowSpin="False" />
+                           AllowSpin="False"
+                           IsEnabled="{Binding !IsCountdownInProgress}" />
             <Button DockPanel.Dock="Left" Command="{Binding StartCountdownCommand}">Start</Button>
             <Button DockPanel.Dock="Left" Command="{Binding PauseResumeCountdownCommand}">Pause/Resume</Button>
             <Button DockPanel.Dock="Left" Command="{Binding StopCountdownCommand}">Stop</Button>
