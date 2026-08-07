@@ -9,6 +9,8 @@ using Microsoft.Extensions.Configuration;
 using TrainingHelper.App.Configuration;
 using TrainingHelper.App.Models;
 using NLog;
+using TrainingHelper.Common;
+using System;
 
 namespace TrainingHelper.App;
 
@@ -41,7 +43,11 @@ public partial class App : Application
         collection.AddSingleton<IConfiguration>(_configurationRoot);
         collection.Configure<Config>(_configurationRoot);
         collection.Configure<ModelConfig>(_configurationRoot);
-        collection.AddSdlSound();
+
+        SoundConfig sc = new();
+        _configurationRoot.Bind(sc);
+        collection.AddSdlSound(sc);
+
         collection.AddSingleton<MainModel>();
         collection.AddSingleton<MainWindowViewModel>();
         var services = collection.BuildServiceProvider();
