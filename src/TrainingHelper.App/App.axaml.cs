@@ -9,8 +9,7 @@ using Microsoft.Extensions.Configuration;
 using TrainingHelper.App.Configuration;
 using TrainingHelper.App.Models;
 using NLog;
-using TrainingHelper.Common;
-using System;
+using TrainingHelper.FreeExerciseDb;
 
 namespace TrainingHelper.App;
 
@@ -43,10 +42,9 @@ public partial class App : Application
         collection.AddSingleton<IConfiguration>(_configurationRoot);
         collection.Configure<Config>(_configurationRoot);
         collection.Configure<ModelConfig>(_configurationRoot);
-
-        SoundConfig sc = new();
-        _configurationRoot.Bind(sc);
-        collection.AddSdlSound(sc);
+        
+        collection.AddSdlSound( _configurationRoot);
+        collection.AddFreeExercsieDbExercsieProvider(_configurationRoot);
 
         collection.AddSingleton<MainModel>();
         collection.AddSingleton<MainWindowViewModel>();

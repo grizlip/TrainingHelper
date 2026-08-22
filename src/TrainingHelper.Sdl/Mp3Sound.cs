@@ -1,6 +1,6 @@
 using NLog;
 using SDL2;
-using TrainingHelper.Common;
+using TrainingHelper.Common.Sound;
 
 namespace TrainingHelper.Sdl;
 

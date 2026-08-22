@@ -1,6 +1,6 @@
-namespace TrainingHelper.Common;
+namespace TrainingHelper.Sdl;
 
-public enum SoundType 
+internal enum SoundType 
 {
     Work,
     Break,
@@ -9,7 +9,7 @@ public enum SoundType
     Countdown
 }
 
-public class SoundConfig
+internal class SoundConfig
 {
     public Dictionary<SoundType, string> SoundFiles { get; set; } = [];
 }

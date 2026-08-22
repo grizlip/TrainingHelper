@@ -1,4 +1,4 @@
-﻿namespace TrainingHelper.Common;
+﻿namespace TrainingHelper.Common.Sound;
 
 public interface ISound
 {

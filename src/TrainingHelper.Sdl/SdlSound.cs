@@ -1,4 +1,4 @@
-﻿using TrainingHelper.Common;
+﻿using TrainingHelper.Common.Sound;
 using SDL2;
 using NLog;
 

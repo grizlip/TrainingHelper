@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using NLog;
 using TrainingHelper.App.Configuration;
-using TrainingHelper.Common;
+using TrainingHelper.Common.Sound;
+using TrainingHelper.Common.Exercise;
 
 namespace TrainingHelper.App.Models;
 
@@ -14,17 +15,21 @@ public class MainModel
 {
     public event EventHandler<(int SecondsPassed, int TotalSeconds, int CurrentRepet, bool Work, string ImagPath)>? CountdownStateChanged;
     public IReadOnlyCollection<string> AudioDevices => _sound.SoundDevicesNames;
+    
     private CancellationTokenSource? _countdownCts = null;
     private readonly ISound _sound;
+    private readonly IExerciseProvider _exercsieProvider;
     private readonly bool _noSound = false;
     private bool _pause = false;
     private readonly TimeSpan _countdownStart = TimeSpan.Zero;
     private static readonly TimeSpan _oneSecond = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan _maxBeepTime = TimeSpan.FromMilliseconds(200);
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
-    public MainModel(ISound sound, IOptions<ModelConfig> configuration)
+
+    public MainModel(ISound sound, IExerciseProvider exerciseProvider, IOptions<ModelConfig> configuration)
     {
         _sound = sound;
+        _exercsieProvider = exerciseProvider;
         _countdownStart = configuration.Value.CountdownStart;
         if (_sound.SoundDevicesNames.Count == 0)
         {
@@ -80,9 +85,9 @@ public class MainModel
 
             try
             {
-                if(!await PlaySoundAsync(_sound.PlayWorkJingleAsync, _countdownCts.Token) ||
-                   !await CountdownAsync((int)workTime.TotalSeconds, true, currentRepet, currentImage, _countdownCts.Token) || 
-                   !await PlaySoundAsync(_sound.PlayBreakJingleAsync, _countdownCts.Token) || 
+                if (!await PlaySoundAsync(_sound.PlayWorkJingleAsync, _countdownCts.Token) ||
+                   !await CountdownAsync((int)workTime.TotalSeconds, true, currentRepet, currentImage, _countdownCts.Token) ||
+                   !await PlaySoundAsync(_sound.PlayBreakJingleAsync, _countdownCts.Token) ||
                    !await CountdownAsync((int)breakTime.TotalSeconds, false, currentRepet, currentImage, _countdownCts.Token))
                 {
                     return false;
@@ -139,9 +144,9 @@ public class MainModel
         return true;
     }
 
-    private async Task<bool> PlaySoundAsync(Func<CancellationToken, Task> playFunction, CancellationToken ct) 
+    private async Task<bool> PlaySoundAsync(Func<CancellationToken, Task> playFunction, CancellationToken ct)
     {
-         await (!_noSound ? playFunction(ct) : Task.CompletedTask);
-         return !ct.IsCancellationRequested;
+        await (!_noSound ? playFunction(ct) : Task.CompletedTask);
+        return !ct.IsCancellationRequested;
     }
 }
