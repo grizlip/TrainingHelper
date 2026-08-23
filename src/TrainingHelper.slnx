@@ -3,5 +3,6 @@
   <Project Path="SDL2-CS/SDL2-CS.Core.csproj" />
   <Project Path="TrainingHelper.Common/TrainingHelper.Common.csproj" />
   <Project Path="TrainingHelper.FreeExerciseDb/TrainingHelper.FreeExerciseDb.csproj" />
+  <Project Path="TrainingHelper.FreeExerciseDb.Tests/TrainingHelper.FreeExerciseDb.Tests.csproj" />
   <Project Path="TrainingHelper.Sdl/TrainingHelper.Sdl.csproj" />
 </Solution>

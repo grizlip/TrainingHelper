@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
@@ -68,79 +69,239 @@ internal class FreeExercsieDbExercsieProvider : IExerciseProvider
         await using var stream = File.OpenRead(_jsonExercsieFile);
 
         byte[] buffer = new byte[64 * 1024];
-        var state = new JsonReaderState();
-
-        int bytesInBuffer = 0;
+        var state = new JsonStringScannerState();
 
         while (true)
         {
-            var bytesRead = await stream.ReadAsync(buffer.AsMemory(bytesInBuffer), ct);
+            var bytesRead = await stream.ReadAsync(buffer.AsMemory(0, buffer.Length), ct);
 
             if (bytesRead == 0)
             {
                 break;
             }
 
-            var totalBytes = bytesInBuffer + bytesRead;
-
-            Utf8JsonReader reader;
-            SearchBufferForIdAndName(onItemFound, buffer, state, totalBytes, out reader);
-
-            // Preserve incomplete token at the end of the buffer.
-            int consumed = (int)reader.BytesConsumed;
-            int remaining = totalBytes - consumed;
-
-            if (remaining > 0)
-            {
-                Buffer.BlockCopy(buffer, consumed, buffer, 0, remaining);
-            }
-
-            bytesInBuffer = remaining;
-            state = reader.CurrentState;
-        }
-
-        // Process the final buffer.
-        if (bytesInBuffer > 0)
-        {
-            SearchBufferForIdAndName(onItemFound, buffer, state, bytesInBuffer, out _);
+            SearchBufferForIdAndName(onItemFound, buffer, bytesRead, state);
         }
     }
 
-    private static void SearchBufferForIdAndName(Action<(string, string)> onItemFound, byte[] buffer, JsonReaderState state, int totalBytes, out Utf8JsonReader reader)
+    private static void SearchBufferForIdAndName(Action<(string, string)> onItemFound, byte[] buffer, int bytesRead, JsonStringScannerState state)
     {
-        reader = new Utf8JsonReader(buffer.AsSpan(0, totalBytes), isFinalBlock: false, state);
-        string? name = null;
-        string? id = null;
-        while (reader.Read())
+        for (var i = 0; i < bytesRead; i++)
         {
-            if (reader.TokenType != JsonTokenType.PropertyName)
+            var code = buffer[i];
+
+            if (state.InString)
             {
+                if (state.InUnicodeEscape)
+                {
+                    if (IsHexDigit(code))
+                    {
+                        state.UnicodeValue = (state.UnicodeValue << 4) | HexValue(code);
+                        state.UnicodeDigitsRead++;
+                        if (state.UnicodeDigitsRead == 4)
+                        {
+                            state.CurrentString.Append((char)state.UnicodeValue);
+                            state.InUnicodeEscape = false;
+                            state.UnicodeValue = 0;
+                            state.UnicodeDigitsRead = 0;
+                        }
+                        continue;
+                    }
+
+                    state.CurrentString.Append('?');
+                    state.InUnicodeEscape = false;
+                    state.UnicodeValue = 0;
+                    state.UnicodeDigitsRead = 0;
+                }
+
+                if (state.IsEscaped)
+                {
+                    switch ((char)code)
+                    {
+                        case '"':
+                            state.CurrentString.Append('"');
+                            break;
+                        case '\\':
+                            state.CurrentString.Append('\\');
+                            break;
+                        case '/':
+                            state.CurrentString.Append('/');
+                            break;
+                        case 'b':
+                            state.CurrentString.Append('\b');
+                            break;
+                        case 'f':
+                            state.CurrentString.Append('\f');
+                            break;
+                        case 'n':
+                            state.CurrentString.Append('\n');
+                            break;
+                        case 'r':
+                            state.CurrentString.Append('\r');
+                            break;
+                        case 't':
+                            state.CurrentString.Append('\t');
+                            break;
+                        case 'u':
+                            state.InUnicodeEscape = true;
+                            state.UnicodeValue = 0;
+                            state.UnicodeDigitsRead = 0;
+                            state.IsEscaped = false;
+                            continue;
+                        default:
+                            state.CurrentString.Append((char)code);
+                            break;
+                    }
+
+                    state.IsEscaped = false;
+                    continue;
+                }
+
+                switch ((char)code)
+                {
+                    case '\\':
+                        state.IsEscaped = true;
+                        break;
+                    case '"':
+                        CompleteJsonStringValue(onItemFound, state);
+                        break;
+                    default:
+                        state.CurrentString.Append((char)code);
+                        break;
+                }
+
                 continue;
             }
 
-            if (reader.ValueTextEquals("name"))
+            var character = (char)code;
+            switch (character)
             {
-                if (reader.Read() && reader.TokenType == JsonTokenType.String)
-                {
-                    name = reader.GetString();
-                }
-            }
-            else if (reader.ValueTextEquals("id"))
-            {
-                if (reader.Read() && reader.TokenType == JsonTokenType.String)
-                {
-                    id = reader.GetString();
-                }
-            }
-
-            // Both found — no need to inspect the rest of this chunk
-            if (name != null && id != null)
-            {
-                onItemFound((id, name));
-                name = null;
-                id = null;
+                case '{':
+                    state.ContainerStack.Push('{');
+                    state.ExpectingPropertyName = true;
+                    break;
+                case '[':
+                    state.ContainerStack.Push('[');
+                    break;
+                case '}':
+                    if (state.ContainerStack.Count > 0 && state.ContainerStack.Peek() == '{')
+                    {
+                        state.ContainerStack.Pop();
+                    }
+                    state.ExpectingPropertyName = false;
+                    state.ExpectingPropertyValue = false;
+                    state.CurrentPropertyName = null;
+                    break;
+                case ']':
+                    if (state.ContainerStack.Count > 0 && state.ContainerStack.Peek() == '[')
+                    {
+                        state.ContainerStack.Pop();
+                    }
+                    break;
+                case ':':
+                    state.ExpectingPropertyName = false;
+                    state.ExpectingPropertyValue = true;
+                    break;
+                case ',':
+                    if (state.ContainerStack.Count > 0 && state.ContainerStack.Peek() == '{')
+                    {
+                        state.ExpectingPropertyName = true;
+                    }
+                    state.ExpectingPropertyValue = false;
+                    state.CurrentPropertyName = null;
+                    break;
+                case '"':
+                    state.InString = true;
+                    state.CurrentString.Clear();
+                    break;
+                case ' ':
+                case '\r':
+                case '\n':
+                case '\t':
+                    break;
+                default:
+                    if (state.ExpectingPropertyValue)
+                    {
+                        state.ExpectingPropertyValue = false;
+                        state.CurrentPropertyName = null;
+                    }
+                    break;
             }
         }
+    }
+
+    private static void CompleteJsonStringValue(Action<(string, string)> onItemFound, JsonStringScannerState state)
+    {
+        state.InString = false;
+        var value = state.CurrentString.ToString();
+        state.CurrentString.Clear();
+
+        if (state.ExpectingPropertyName)
+        {
+            state.CurrentPropertyName = value;
+            state.ExpectingPropertyName = false;
+            return;
+        }
+
+        if (state.ExpectingPropertyValue && state.CurrentPropertyName is not null)
+        {
+            if (state.CurrentPropertyName == "id")
+            {
+                state.PendingId = value;
+            }
+            else if (state.CurrentPropertyName == "name")
+            {
+                state.PendingName = value;
+            }
+
+            state.ExpectingPropertyValue = false;
+            state.CurrentPropertyName = null;
+
+            if (state.PendingId is not null && state.PendingName is not null)
+            {
+                onItemFound((state.PendingId, state.PendingName));
+                state.PendingId = null;
+                state.PendingName = null;
+            }
+        }
+    }
+
+    private static bool IsHexDigit(byte value)
+    {
+        return value is >= (byte)'0' and <= (byte)'9'
+            or >= (byte)'a' and <= (byte)'f'
+            or >= (byte)'A' and <= (byte)'F';
+    }
+
+    private static int HexValue(byte value)
+    {
+        if (value is >= (byte)'0' and <= (byte)'9')
+        {
+            return value - (byte)'0';
+        }
+
+        if (value is >= (byte)'a' and <= (byte)'f')
+        {
+            return 10 + (value - (byte)'a');
+        }
+
+        return 10 + (value - (byte)'A');
+    }
+
+    private sealed class JsonStringScannerState
+    {
+        public bool InString { get; set; }
+        public bool IsEscaped { get; set; }
+        public bool InUnicodeEscape { get; set; }
+        public int UnicodeValue { get; set; }
+        public int UnicodeDigitsRead { get; set; }
+        public bool ExpectingPropertyName { get; set; }
+        public bool ExpectingPropertyValue { get; set; }
+        public string? CurrentPropertyName { get; set; }
+        public string? PendingId { get; set; }
+        public string? PendingName { get; set; }
+        public readonly Stack<char> ContainerStack = new();
+        public readonly StringBuilder CurrentString = new();
     }
 
     private async IAsyncEnumerable<Exercise?> GetExercisesAsync([EnumeratorCancellation] CancellationToken ct)
