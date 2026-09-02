@@ -54,7 +54,7 @@
                         SelectedTime="{Binding Break}"
                         IsEnabled="{Binding !IsCountdownInProgress}" />
             <Label DockPanel.Dock="Left" VerticalAlignment="Center">Repet count: </Label>
-            <NumericUpDown DockPanel.Dock="Left" Value="{Binding RepetCount}"
+            <NumericUpDown DockPanel.Dock="Left" Margin="5" Value="{Binding RepetCount}"
                            VerticalContentAlignment="Center"
                            Minimum="1" Maximum="200"
                            ShowButtonSpinner="False"
