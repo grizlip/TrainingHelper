@@ -7,8 +7,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Options;
 using NLog;
-using TrainingHelper.App.Configuration;
 using TrainingHelper.App.Models;
+using TrainingHelper.Common.Configuration;
 
 namespace TrainingHelper.App.ViewModels;
 

@@ -10,6 +10,7 @@ using TrainingHelper.App.Configuration;
 using TrainingHelper.App.Models;
 using NLog;
 using TrainingHelper.FreeExerciseDb;
+using TrainingHelper.Common.Configuration;
 
 namespace TrainingHelper.App;
 
@@ -41,10 +42,9 @@ public partial class App : Application
         _configurationRoot = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: false, reloadOnChange: true).Build();
         collection.AddSingleton<IConfiguration>(_configurationRoot);
         collection.Configure<Config>(_configurationRoot);
-        collection.Configure<ModelConfig>(_configurationRoot);
-        
-        collection.AddSdlSound( _configurationRoot);
-        collection.AddFreeExercsieDbExercsieProvider(_configurationRoot);
+
+        collection.AddSdlSound(_configurationRoot.Get<Config>()!);
+        collection.AddFreeExercsieDbExercsieProvider(_configurationRoot.Get<Config>()!);
 
         collection.AddSingleton<MainModel>();
         collection.AddSingleton<MainWindowViewModel>();

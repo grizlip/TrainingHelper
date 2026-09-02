@@ -1,17 +1,21 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TrainingHelper.Common.Configuration;
 using TrainingHelper.Common.Sound;
 
 namespace TrainingHelper.Sdl;
 
 public static class TrainingHelperSdl
 {
-    public static void AddSdlSound(this IServiceCollection collection, IConfigurationRoot configurationRoot)
+    public static void AddSdlSound(this IServiceCollection collection, Config config)
     {
-        var soundConfig = configurationRoot.GetSection("SoundConfig").Get<SoundConfig>();
-        if (soundConfig?.SoundFiles.Count == Enum.GetValues(typeof(SoundType)).Length)
+        var defaultSoundDeviceName = config.DefaultAudioDeviceSelection;
+        if(defaultSoundDeviceName != null)
         {
-            collection.AddSingleton(soundConfig);
+            collection.AddKeyedSingleton("defaultSoundDeviceName", defaultSoundDeviceName);
+        }
+        if (config.SoundFiles.Count == Enum.GetValues(typeof(SoundType)).Length)
+        {
+            collection.AddKeyedSingleton("soundFiles", config.SoundFiles);
             collection.AddSingleton<ISound, Mp3Sound>();
         }
         else

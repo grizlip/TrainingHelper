@@ -1,6 +1,7 @@
 ﻿using TrainingHelper.Common.Sound;
 using SDL2;
 using NLog;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace TrainingHelper.Sdl;
 
@@ -28,7 +29,7 @@ internal class SDLSound : IDisposable, ISound
     ];
     private readonly (double Frequency, int Milliseconds)[] _countdownJingle = [(440, 50)];
 
-    public SDLSound()
+    public SDLSound([FromKeyedServices("defaultSoundDeviceName")] string defaultSoundDeviceName)
     {
         if (SDL.SDL_Init(SDL.SDL_INIT_AUDIO) < 0)
         {
@@ -41,13 +42,13 @@ internal class SDLSound : IDisposable, ISound
             _soundDevicesNames.Add(SDL.SDL_GetAudioDeviceName(i, 0));
         }
 
-        if (_soundDevicesNames.Count != 0)
+        if (_soundDevicesNames.Contains(defaultSoundDeviceName))
         {
-            OpenAudioDevice(_soundDevicesNames[0]);
+            OpenAudioDevice(defaultSoundDeviceName);
         }
         else
         {
-            _logger.Warn("No audio device suitable for playback.");
+            _logger.Warn($"No audio device suitable for playback. Tried {defaultSoundDeviceName}.");
         }
     }
 

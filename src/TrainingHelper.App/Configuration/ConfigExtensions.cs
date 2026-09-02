@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
+using TrainingHelper.Common.Configuration;
 
 namespace TrainingHelper.App.Configuration;
 

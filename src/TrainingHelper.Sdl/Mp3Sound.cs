@@ -1,5 +1,7 @@
+using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using SDL2;
+using TrainingHelper.Common.Configuration;
 using TrainingHelper.Common.Sound;
 
 namespace TrainingHelper.Sdl;
@@ -12,14 +14,18 @@ internal sealed class Mp3Sound : ISound, IDisposable
     private readonly Dictionary<SoundType, string> _sounds = [];
     private readonly SemaphoreSlim _playLock = new(1, 1);
     private bool _audioInitialized;
+    private string? _selectedAudioDeviceName;
+    private IntPtr _activeMusic;
+    private string? _activeMusicFilePath;
 
     public IReadOnlyCollection<string> SoundDevicesNames => _soundDevicesNames;
 
-    public Mp3Sound(SoundConfig soundConfig)
+    public Mp3Sound([FromKeyedServices("soundFiles")] Dictionary<SoundType, string> soundFiles,
+                    [FromKeyedServices("defaultSoundDeviceName")] string defaultSoundDeviceName)
     {
         DiscoverAudioDevices();
-        LoadMp3Files(soundConfig.SoundFiles);
-        InitializeMixer();
+        LoadMp3Files(soundFiles);
+        InitializeMixer(defaultSoundDeviceName);
     }
 
     public void ChangeAudiDevice(string audioDeviceName)
@@ -29,14 +35,70 @@ internal sealed class Mp3Sound : ISound, IDisposable
             return;
         }
 
-        _logger.Info($"MP3 sound implementation is using the default SDL mixer device; selected device '{audioDeviceName}' was recorded for configuration purposes.");
+        if (string.Equals(_selectedAudioDeviceName, audioDeviceName, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        string? activeMusicFilePath = null;
+        double activeMusicPosition = 0;
+
+        _playLock.Wait();
+        try
+        {
+            bool wasPlaying = _activeMusic != IntPtr.Zero && SDL_mixer.Mix_PlayingMusic() == 1;
+            if (wasPlaying)
+            {
+                _logger.Trace("Pausing currently playing music before switching audio device.");
+                activeMusicFilePath = _activeMusicFilePath;
+                activeMusicPosition = SDL_mixer.Mix_GetMusicPosition(_activeMusic);
+                SDL_mixer.Mix_HaltMusic();
+                SDL_mixer.Mix_FreeMusic(_activeMusic);
+                _activeMusic = IntPtr.Zero;
+                _activeMusicFilePath = null;
+            }
+
+            _logger.Trace($"Switching SDL mixer audio device from '{_selectedAudioDeviceName ?? "default"}' to '{audioDeviceName}'.");
+            SDL_mixer.Mix_CloseAudio();
+            SDL_mixer.Mix_Quit();
+
+            _selectedAudioDeviceName = audioDeviceName;
+            InitializeMixer(audioDeviceName);
+
+            if (wasPlaying && File.Exists(activeMusicFilePath))
+            {
+                _logger.Trace($"Resuming previously playing music '{activeMusicFilePath}' after switching audio device. {activeMusicPosition} seconds into the track.");
+                _activeMusic = SDL_mixer.Mix_LoadMUS(activeMusicFilePath);
+                if (_activeMusic != IntPtr.Zero)
+                {
+                    _activeMusicFilePath = activeMusicFilePath;
+                    if (SDL_mixer.Mix_PlayMusic(_activeMusic, 0) < 0)
+                    {
+                        _logger.Warn($"Failed to play music '{activeMusicFilePath}': {SDL.SDL_GetError()}");
+                    }
+                    if (activeMusicPosition > 0)
+                    {
+                        if (SDL_mixer.Mix_SetMusicPosition(activeMusicPosition) < 0)
+                        {
+                            _logger.Warn($"Failed to set music position for '{activeMusicFilePath}': {SDL.SDL_GetError()}");
+                        }
+                    }
+
+
+                }
+            }
+        }
+        finally
+        {
+            _playLock.Release();
+        }
     }
 
-    public Task PlayWorkJingleAsync(CancellationToken ct) => PlayMp3Async(SoundType.Work, ct);
-    public Task PlayBreakJingleAsync(CancellationToken ct) => PlayMp3Async(SoundType.Break, ct);
-    public Task PlayStartJingleAsyncAsync(CancellationToken ct) => PlayMp3Async(SoundType.Start, ct);
-    public Task PlayEndJingleAsyncAsync(CancellationToken ct) => PlayMp3Async(SoundType.End, ct);
-    public Task PlayCountdownJingleAsync(CancellationToken ct) => PlayMp3Async(SoundType.Countdown, ct);
+    public async Task PlayWorkJingleAsync(CancellationToken ct) => await PlayMp3Async(SoundType.Work, ct);
+    public async Task PlayBreakJingleAsync(CancellationToken ct) => await PlayMp3Async(SoundType.Break, ct);
+    public async Task PlayStartJingleAsyncAsync(CancellationToken ct) => await PlayMp3Async(SoundType.Start, ct);
+    public async Task PlayEndJingleAsyncAsync(CancellationToken ct) => await PlayMp3Async(SoundType.End, ct);
+    public async Task PlayCountdownJingleAsync(CancellationToken ct) => await PlayMp3Async(SoundType.Countdown, ct);
 
     public void Dispose()
     {
@@ -88,11 +150,12 @@ internal sealed class Mp3Sound : ISound, IDisposable
         }
     }
 
-    private void InitializeMixer()
+    private void InitializeMixer(string? deviceName)
     {
-        if (SDL_mixer.Mix_OpenAudio(44100, SDL.AUDIO_S16SYS, 2, 2048) < 0)
+        if (SDL_mixer.Mix_OpenAudioDevice(44100, SDL.AUDIO_S16SYS, 2, 2048, deviceName, 1) < 0)
         {
-            _logger.Warn($"Unable to open SDL_mixer audio device: {SDL_mixer.Mix_GetError()}");
+            _logger.Warn($"Unable to open SDL_mixer audio device '{deviceName ?? "default"}': {SDL_mixer.Mix_GetError()}");
+            _audioInitialized = false;
             return;
         }
 
@@ -131,13 +194,18 @@ internal sealed class Mp3Sound : ISound, IDisposable
                 return;
             }
 
+            _activeMusic = music;
+            _activeMusicFilePath = filePath;
+
             try
             {
-                SDL_mixer.Mix_PlayMusic(music, 0);
+                SDL_mixer.Mix_PlayMusic(_activeMusic, 0);
 
                 while (!ct.IsCancellationRequested && SDL_mixer.Mix_PlayingMusic() == 1)
                 {
+                    _playLock.Release();
                     await Task.Delay(50, ct).ConfigureAwait(false);
+                    await _playLock.WaitAsync(ct).ConfigureAwait(false);
                 }
 
                 if (ct.IsCancellationRequested)
@@ -147,7 +215,12 @@ internal sealed class Mp3Sound : ISound, IDisposable
             }
             finally
             {
-                SDL_mixer.Mix_FreeMusic(music);
+
+                _activeMusic = IntPtr.Zero;
+                _activeMusicFilePath = null;
+
+
+                SDL_mixer.Mix_FreeMusic(_activeMusic);
             }
         }
         catch (OperationCanceledException)
@@ -156,7 +229,10 @@ internal sealed class Mp3Sound : ISound, IDisposable
         }
         finally
         {
-            _playLock.Release();
+            if (_playLock.CurrentCount == 0)
+            {
+                _playLock.Release();
+            }
         }
     }
 }

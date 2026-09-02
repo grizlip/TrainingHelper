@@ -1,7 +1,4 @@
-using System;
-using System.Collections.Generic;
-
-namespace TrainingHelper.App.Configuration;
+namespace TrainingHelper.Common.Configuration;
 
 public class Config
 {
@@ -9,4 +6,7 @@ public class Config
     public TimeSpan BreakTime { get; set; } = TimeSpan.FromSeconds(3);
     public IEnumerable<string> Pictures { get; set; } = [];
     public string DefaultAudioDeviceSelection { get; set; } = string.Empty;
+    public Dictionary<SoundType, string> SoundFiles { get; set; } = [];
+    public TimeSpan CountdownStart { get; set; } = TimeSpan.FromSeconds(3);
+    public string FreeExercsieDbExercsieJson { get; set; } = string.Empty;  
 }
