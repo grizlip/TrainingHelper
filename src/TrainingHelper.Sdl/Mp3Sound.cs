@@ -152,7 +152,7 @@ internal sealed class Mp3Sound : ISound, IDisposable
 
     private void InitializeMixer(string? deviceName)
     {
-        if (SDL_mixer.Mix_OpenAudioDevice(44100, SDL.AUDIO_S16SYS, 2, 2048, deviceName, 1) < 0)
+        if (SDL_mixer.OpenAudioDevice(44100, SDL.AUDIO_S16SYS, 2, 2048, deviceName, 1) < 0)
         {
             _logger.Warn($"Unable to open SDL_mixer audio device '{deviceName ?? "default"}': {SDL_mixer.Mix_GetError()}");
             _audioInitialized = false;
