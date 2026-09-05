@@ -53,8 +53,8 @@
                         ClockIdentifier="24HourClock"
                         SelectedTime="{Binding Break}"
                         IsEnabled="{Binding !IsCountdownInProgress}" />
-            <Label DockPanel.Dock="Left" VerticalAlignment="Center">Repet count: </Label>
-            <NumericUpDown DockPanel.Dock="Left" Margin="5" Value="{Binding RepetCount}"
+            <Label DockPanel.Dock="Left" VerticalAlignment="Center">Rounds count: </Label>
+            <NumericUpDown DockPanel.Dock="Left" Margin="5" Value="{Binding RoundsCount}"
                            VerticalContentAlignment="Center"
                            Minimum="1" Maximum="200"
                            ShowButtonSpinner="False"
@@ -71,8 +71,8 @@
         </DockPanel>
         <StackPanel Grid.Row="1">
             <StackPanel Orientation="Horizontal">
-                <Label VerticalAlignment="Center">Current repet: </Label>
-                <Label VerticalAlignment="Center" Content="{Binding CurrentRepet}" />
+                <Label VerticalAlignment="Center">Current round: </Label>
+                <Label VerticalAlignment="Center" Content="{Binding CurrentRound}" />
                 <Label IsVisible="{Binding IsCountdownInProgress}">
                     <Interaction.Behaviors>
                         <DataTrigger Binding="{Binding Work}" Value="True">

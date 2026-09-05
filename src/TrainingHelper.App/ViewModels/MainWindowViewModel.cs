@@ -21,7 +21,7 @@ public partial class MainWindowViewModel : ObservableObject
     private TimeSpan _break = TimeSpan.FromSeconds(3);
 
     [ObservableProperty]
-    private int _repetCount = 1;
+    private int _roundsCount = 1;
 
     [ObservableProperty]
     private int _secondsPassed = 0;
@@ -35,7 +35,7 @@ public partial class MainWindowViewModel : ObservableObject
     private bool _isCountdownInProgress = false;
 
     [ObservableProperty]
-    private int _currentRepet = 1;
+    private int _currentRound = 1;
 
     [ObservableProperty]
     private bool _work = true;
@@ -102,7 +102,7 @@ public partial class MainWindowViewModel : ObservableObject
         TotalSeconds = (int)value.TotalSeconds;
     }
 
-    private void OnCountdownStateChanged(object? sender, (int SecondsPassed, int TotalSeconds, int CurrentRepet, bool Work, string ImagPath) e)
+    private void OnCountdownStateChanged(object? sender, (int SecondsPassed, int TotalSeconds, int CurrentRound, bool Work, string ImagPath) e)
     {
         Work = e.Work;
         if (!string.IsNullOrEmpty(e.ImagPath))
@@ -113,7 +113,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
         TotalSeconds = e.TotalSeconds;
         SecondsPassed = e.SecondsPassed;
-        CurrentRepet = e.CurrentRepet + 1;
+        CurrentRound = e.CurrentRound + 1;
     }
 
     [RelayCommand(CanExecute = nameof(IsCountdownInProgress))]
@@ -130,7 +130,7 @@ public partial class MainWindowViewModel : ObservableObject
         TotalSeconds = (int)Interval.TotalSeconds;
         SecondsPassed = 0;
         IsCountdownInProgress = true;
-        await _model.StartCountdownAsync(Interval, Break, RepetCount, _configuration.Value.Pictures);
+        await _model.StartCountdownAsync(Interval, Break, RoundsCount, _configuration.Value.Pictures);
         UpdateGuiStateAfterStopCountdown();
     }
 
@@ -143,7 +143,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         SecondsPassed = 0;
         IsCountdownInProgress = false;
-        CurrentRepet = 1;
+        CurrentRound = 1;
         Work = true;
         Photo?.Dispose();
         Photo = null;
