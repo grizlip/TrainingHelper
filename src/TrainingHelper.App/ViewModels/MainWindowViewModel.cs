@@ -89,7 +89,6 @@ public partial class MainWindowViewModel : ObservableObject
         {
             _model.ChangeSelectedAudioDevice(value);
             _configuration.Value.DefaultAudioDeviceSelection = value;
-            App.UpdateDefaultAudioDeviceSelection(value);
         }
         else
         {

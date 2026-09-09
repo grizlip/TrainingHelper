@@ -6,43 +6,56 @@ using TrainingHelper.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using TrainingHelper.Sdl;
 using Microsoft.Extensions.Configuration;
-using TrainingHelper.App.Configuration;
 using TrainingHelper.App.Models;
 using NLog;
 using TrainingHelper.FreeExerciseDb;
 using TrainingHelper.Common.Configuration;
+using System;
+using System.IO;
 
 namespace TrainingHelper.App;
 
 public partial class App : Application
 {
     private static IConfigurationRoot? _configurationRoot;
+    private static Lazy<string> ConfigDirectory = new Lazy<string>(() =>
+       {
+           if (OperatingSystem.IsWindows())
+           {
+               return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TraningHelper.App");
+           }
+
+           if (OperatingSystem.IsLinux())
+           {
+               var xdgConfigHome = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
+
+               var basePath = !string.IsNullOrWhiteSpace(xdgConfigHome)
+                   ? xdgConfigHome
+                   : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config");
+
+               return Path.Combine(basePath, "TraningHelper.App");
+           }
+
+           throw new PlatformNotSupportedException();
+       });
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
-    }
-
-
-    public static void UpdateDefaultAudioDeviceSelection(string defaultAudioDevice)
-    {
-        if (_configurationRoot != null)
+        if (Directory.Exists(ConfigDirectory.Value) == false)
         {
-            _configurationRoot.UpdateConfiguration(defaultAudioDevice);
-        }
-        else
-        {
-            _logger.Warn("ConfigurationRoot is null. Configuration will not be updated.");
+            Directory.CreateDirectory(ConfigDirectory.Value);
         }
     }
 
     public override void OnFrameworkInitializationCompleted()
     {
         var collection = new ServiceCollection();
-        _configurationRoot = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: false, reloadOnChange: true).Build();
+        var configurationBuilder = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+        configurationBuilder.AddJsonFile(Path.Combine(ConfigDirectory.Value, "appsettings.json"), optional: true, reloadOnChange: true);
+        _configurationRoot = configurationBuilder.Build();
         collection.AddSingleton<IConfiguration>(_configurationRoot);
         collection.Configure<Config>(_configurationRoot);
-
         collection.AddSdlSound(_configurationRoot.Get<Config>()!);
         collection.AddFreeExercsieDbExercsieProvider(_configurationRoot.Get<Config>()!);
 
