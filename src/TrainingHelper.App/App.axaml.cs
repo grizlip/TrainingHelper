@@ -18,7 +18,7 @@ namespace TrainingHelper.App;
 public partial class App : Application
 {
     private static IConfigurationRoot? _configurationRoot;
-    private static Lazy<string> ConfigDirectory = new Lazy<string>(() =>
+    private static Lazy<string> ConfigDirectory = new Lazy<string>(static () =>
        {
            if (OperatingSystem.IsWindows())
            {
@@ -38,13 +38,22 @@ public partial class App : Application
 
            throw new PlatformNotSupportedException();
        });
+
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
-        if (Directory.Exists(ConfigDirectory.Value) == false)
+        try
         {
-            Directory.CreateDirectory(ConfigDirectory.Value);
+            if (Directory.Exists(ConfigDirectory.Value) == false)
+            {
+                Directory.CreateDirectory(ConfigDirectory.Value);
+            }
+        }
+        catch (PlatformNotSupportedException ex)
+        {
+            _logger.Error(ex, "Failed to create config directory");
         }
     }
 
@@ -52,7 +61,14 @@ public partial class App : Application
     {
         var collection = new ServiceCollection();
         var configurationBuilder = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-        configurationBuilder.AddJsonFile(Path.Combine(ConfigDirectory.Value, "appsettings.json"), optional: true, reloadOnChange: true);
+        try
+        {
+            configurationBuilder.AddJsonFile(Path.Combine(ConfigDirectory.Value, "appsettings.json"), optional: true, reloadOnChange: true);
+        }
+        catch (PlatformNotSupportedException ex)
+        {
+            _logger.Error(ex, "Failed to add user config file, Only defaults will be used");
+        }
         _configurationRoot = configurationBuilder.Build();
         collection.AddSingleton<IConfiguration>(_configurationRoot);
         collection.Configure<Config>(_configurationRoot);
