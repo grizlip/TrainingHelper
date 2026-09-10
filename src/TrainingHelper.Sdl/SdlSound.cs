@@ -8,6 +8,7 @@ namespace TrainingHelper.Sdl;
 internal class SDLSound : IDisposable, ISound
 {
     public IReadOnlyCollection<string> SoundDevicesNames => _soundDevicesNames;
+    public string SelectedAudioDevice => _soundDeviceId != 0 ? SDL.SDL_GetAudioDeviceName((int)_soundDeviceId, 0) : string.Empty;
 
     private double _samplingIndex = 0;
     private SDL.SDL_AudioSpec _haveAudioSpec;
@@ -29,7 +30,7 @@ internal class SDLSound : IDisposable, ISound
     ];
     private readonly (double Frequency, int Milliseconds)[] _countdownJingle = [(440, 50)];
 
-    public SDLSound([FromKeyedServices("defaultSoundDeviceName")] string defaultSoundDeviceName)
+    public SDLSound([FromKeyedServices("defaultSoundDeviceName")] string? defaultSoundDeviceName)
     {
         if (SDL.SDL_Init(SDL.SDL_INIT_AUDIO) < 0)
         {
@@ -42,13 +43,18 @@ internal class SDLSound : IDisposable, ISound
             _soundDevicesNames.Add(SDL.SDL_GetAudioDeviceName(i, 0));
         }
 
-        if (_soundDevicesNames.Contains(defaultSoundDeviceName))
+        if (!string.IsNullOrEmpty(defaultSoundDeviceName) && _soundDevicesNames.Contains(defaultSoundDeviceName))
         {
             OpenAudioDevice(defaultSoundDeviceName);
         }
         else
         {
             _logger.Warn($"No audio device suitable for playback. Tried {defaultSoundDeviceName}.");
+            if (_soundDevicesNames.Count > 0)
+            {
+                _logger.Info("Using first available audio device instead.");
+                OpenAudioDevice(_soundDevicesNames[0]);
+            }
         }
     }
 

@@ -15,7 +15,9 @@ public class MainModel
 {
     public event EventHandler<(int SecondsPassed, int TotalSeconds, int CurrentRound, bool Work, string ImagPath)>? CountdownStateChanged;
     public IReadOnlyCollection<string> AudioDevices => _sound.SoundDevicesNames;
-    
+
+    public string SelectedAudioDevice => _sound.SelectedAudioDevice;
+
     private CancellationTokenSource? _countdownCts = null;
     private readonly ISound _sound;
     private readonly IExerciseProvider _exercsieProvider;
@@ -107,7 +109,6 @@ public class MainModel
         }
         _pause = false;
     }
-
 
     public void PauseResumeCountdown()
     {

@@ -20,12 +20,15 @@ internal sealed class Mp3Sound : ISound, IDisposable
 
     public IReadOnlyCollection<string> SoundDevicesNames => _soundDevicesNames;
 
+    public string SelectedAudioDevice => _selectedAudioDeviceName ?? string.Empty;
+
     public Mp3Sound([FromKeyedServices("soundFiles")] Dictionary<SoundType, string> soundFiles,
-                    [FromKeyedServices("defaultSoundDeviceName")] string defaultSoundDeviceName)
+                    [FromKeyedServices("defaultSoundDeviceName")] string? defaultSoundDeviceName)
     {
         DiscoverAudioDevices();
         LoadMp3Files(soundFiles);
-        InitializeMixer(defaultSoundDeviceName);
+        // Initialize the SDL_mixer audio system with the default or specified audio device (null means default)
+        InitializeMixer(string.IsNullOrEmpty(defaultSoundDeviceName) ? null : defaultSoundDeviceName);
     }
 
     public void ChangeAudiDevice(string audioDeviceName)

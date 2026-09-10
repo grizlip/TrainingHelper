@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using TrainingHelper.Sdl;
 using Microsoft.Extensions.Configuration;
 using TrainingHelper.App.Models;
-using NLog;
 using TrainingHelper.FreeExerciseDb;
 using TrainingHelper.Common.Configuration;
 using System;
@@ -36,24 +35,15 @@ public partial class App : Application
                return Path.Combine(basePath, "TraningHelper.App");
            }
 
-           throw new PlatformNotSupportedException();
+           return "UserConfig";
        });
-
-    private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
-        try
+        if (Directory.Exists(ConfigDirectory.Value) == false)
         {
-            if (Directory.Exists(ConfigDirectory.Value) == false)
-            {
-                Directory.CreateDirectory(ConfigDirectory.Value);
-            }
-        }
-        catch (PlatformNotSupportedException ex)
-        {
-            _logger.Error(ex, "Failed to create config directory");
+            Directory.CreateDirectory(ConfigDirectory.Value);
         }
     }
 
@@ -61,18 +51,12 @@ public partial class App : Application
     {
         var collection = new ServiceCollection();
         var configurationBuilder = new ConfigurationBuilder().AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-        try
-        {
-            configurationBuilder.AddJsonFile(Path.Combine(ConfigDirectory.Value, "appsettings.json"), optional: true, reloadOnChange: true);
-        }
-        catch (PlatformNotSupportedException ex)
-        {
-            _logger.Error(ex, "Failed to add user config file, Only defaults will be used");
-        }
+        configurationBuilder.AddJsonFile(Path.Combine(ConfigDirectory.Value, "appsettings.json"), optional: true, reloadOnChange: true);
         _configurationRoot = configurationBuilder.Build();
         collection.AddSingleton<IConfiguration>(_configurationRoot);
         collection.Configure<Config>(_configurationRoot);
-        collection.AddSdlSound(_configurationRoot.Get<Config>()!);
+
+        collection.AddSdlSound(configurationBuilder, ConfigDirectory.Value);
         collection.AddFreeExercsieDbExercsieProvider(_configurationRoot.Get<Config>()!);
 
         collection.AddSingleton<MainModel>();

@@ -2,6 +2,7 @@
 
 public interface ISound
 {
+    string SelectedAudioDevice { get; }
     IReadOnlyCollection<string> SoundDevicesNames { get; }
     void ChangeAudiDevice(string audioDeviceName);
     Task PlayWorkJingleAsync(CancellationToken ct);

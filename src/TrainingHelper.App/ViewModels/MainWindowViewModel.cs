@@ -71,15 +71,7 @@ public partial class MainWindowViewModel : ObservableObject
         HasAudioDevices = AudioDevices.Count > 0;
         if (HasAudioDevices)
         {
-            if (AudioDevices.Contains(_configuration.Value.DefaultAudioDeviceSelection))
-            {
-                SelectedAudioDevice = _configuration.Value.DefaultAudioDeviceSelection;
-            }
-            else
-            {
-                _logger.Warn($"There is no {_configuration.Value.DefaultAudioDeviceSelection} devices. Taking the first one from the list");
-                SelectedAudioDevice = AudioDevices[0];
-            }
+            SelectedAudioDevice = model.SelectedAudioDevice;
         }
     }
 
@@ -88,7 +80,6 @@ public partial class MainWindowViewModel : ObservableObject
         if (!string.IsNullOrEmpty(value) && AudioDevices.Contains(value))
         {
             _model.ChangeSelectedAudioDevice(value);
-            _configuration.Value.DefaultAudioDeviceSelection = value;
         }
         else
         {
