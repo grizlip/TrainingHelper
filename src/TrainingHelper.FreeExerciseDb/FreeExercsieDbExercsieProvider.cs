@@ -1,8 +1,9 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
-using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using TrainingHelper.Common.Exercise;
+using TrainingHelper.Common.Settings;
+using TrainingHelper.FreeExerciseDb.Settings;
 using TrainingHelper.FreeExerciseDb.JSON;
 
 namespace TrainingHelper.FreeExerciseDb;
@@ -13,13 +14,14 @@ internal class FreeExercsieDbExercsieProvider : IExerciseProvider
     private readonly string _jsonExercsieFile;
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-    public FreeExercsieDbExercsieProvider([FromKeyedServices("jsonFile")] string jsonFile)
+    public FreeExercsieDbExercsieProvider(ISettingsService<FreeExerciseDbConfig> settingsService)
     {
-        if (!File.Exists(jsonFile))
+        _jsonExercsieFile = settingsService.Load().FreeExercsieDbExercsieJson;
+        if (!File.Exists(_jsonExercsieFile))
         {
-            throw new ArgumentException(nameof(jsonFile));
+            throw new ArgumentException(nameof(_jsonExercsieFile));
         }
-        _jsonExercsieFile = jsonFile;
+
         _exercsies = new(LoadExercisesAsync);
     }
 
@@ -67,7 +69,7 @@ internal class FreeExercsieDbExercsieProvider : IExerciseProvider
         {
             PropertyNameCaseInsensitive = true
         };
-        
+
         await foreach (var exercise in JsonSerializer.DeserializeAsyncEnumerable<Exercise>(stream, options, CancellationToken.None))
         {
             if (exercise is not null && !string.IsNullOrEmpty(exercise.Id))

@@ -1,7 +1,8 @@
 ﻿using TrainingHelper.Common.Sound;
 using SDL2;
 using NLog;
-using Microsoft.Extensions.DependencyInjection;
+using TrainingHelper.Common.Settings;
+using TrainingHelper.Sdl.Settings;
 
 namespace TrainingHelper.Sdl;
 
@@ -16,7 +17,7 @@ internal class SDLSound : IDisposable, ISound
     private double _soundFrequency = 0;
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
     private const double AMPLITUDE = 28000d;
-    private readonly List<string> _soundDevicesNames = [];    
+    private readonly List<string> _soundDevicesNames = [];
     private readonly (double Frequency, int Milliseconds)[] _workBreakJingle =
     [
         new( 440.0, 200 ), // A4
@@ -30,7 +31,7 @@ internal class SDLSound : IDisposable, ISound
     ];
     private readonly (double Frequency, int Milliseconds)[] _countdownJingle = [(440, 50)];
 
-    public SDLSound([FromKeyedServices("defaultSoundDeviceName")] string? defaultSoundDeviceName)
+    public SDLSound(ISettingsService<SoundConfig> settingsService)
     {
         if (SDL.SDL_Init(SDL.SDL_INIT_AUDIO) < 0)
         {
@@ -42,7 +43,7 @@ internal class SDLSound : IDisposable, ISound
         {
             _soundDevicesNames.Add(SDL.SDL_GetAudioDeviceName(i, 0));
         }
-
+        var defaultSoundDeviceName = settingsService.Load().DefaultAudioDeviceSelection;
         if (!string.IsNullOrEmpty(defaultSoundDeviceName) && _soundDevicesNames.Contains(defaultSoundDeviceName))
         {
             OpenAudioDevice(defaultSoundDeviceName);

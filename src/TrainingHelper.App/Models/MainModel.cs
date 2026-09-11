@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Options;
 using NLog;
 using TrainingHelper.Common.Sound;
 using TrainingHelper.Common.Exercise;
-using TrainingHelper.App.Configuration;
+using TrainingHelper.App.Settings;
+using TrainingHelper.Common.Settings;
 
 namespace TrainingHelper.App.Models;
 
@@ -28,11 +28,11 @@ internal class MainModel
     private static readonly TimeSpan _maxBeepTime = TimeSpan.FromMilliseconds(200);
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-    public MainModel(ISound sound, IExerciseProvider exerciseProvider, IOptions<Config> config)
+    public MainModel(ISound sound, IExerciseProvider exerciseProvider, ISettingsService<AppSettings> settingsService)
     {
         _sound = sound;
         _exercsieProvider = exerciseProvider;
-        _countdownStart = config.Value.CountdownStart;
+        _countdownStart = settingsService.Load().CountdownStart;
         if (_sound.SoundDevicesNames.Count == 0)
         {
             _logger.Warn($"Can't find any sound devices names. There will be no sound.");

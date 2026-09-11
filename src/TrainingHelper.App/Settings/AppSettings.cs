@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 
-namespace TrainingHelper.App.Configuration;
+namespace TrainingHelper.App.Settings;
 
-internal class Config
+internal class AppSettings
 {
     public TimeSpan WorkTime { get; set; } = TimeSpan.FromSeconds(30);
     public TimeSpan BreakTime { get; set; } = TimeSpan.FromSeconds(3);

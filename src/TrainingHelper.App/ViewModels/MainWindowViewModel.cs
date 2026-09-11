@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.Options;
 using NLog;
-using TrainingHelper.App.Configuration;
+using TrainingHelper.App.Settings;
 using TrainingHelper.App.Models;
+using TrainingHelper.Common.Settings;
 
 namespace TrainingHelper.App.ViewModels;
 
@@ -55,17 +55,17 @@ internal partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string? _selectedAudioDevice;
     private readonly MainModel _model;
-    private readonly IOptions<Config> _configuration;
+    private readonly AppSettings _settings;
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-    public MainWindowViewModel(MainModel model, IOptions<Config> configuration)
+    public MainWindowViewModel(MainModel model, ISettingsService<AppSettings> settingsService)
     {
-        _configuration = configuration;
-        ShowImages = _configuration.Value.Pictures.Any();
+        _settings = settingsService.Load();
+        ShowImages = _settings.Pictures.Any();
         _model = model;
         _model.CountdownStateChanged += OnCountdownStateChanged;
-        Interval = _configuration.Value.WorkTime;
-        Break = _configuration.Value.BreakTime;
+        Interval = _settings.WorkTime;
+        Break = _settings.BreakTime;
 
         AudioDevices = new ObservableCollection<string>(_model.AudioDevices);
         HasAudioDevices = AudioDevices.Count > 0;
@@ -120,7 +120,7 @@ internal partial class MainWindowViewModel : ObservableObject
         TotalSeconds = (int)Interval.TotalSeconds;
         SecondsPassed = 0;
         IsCountdownInProgress = true;
-        await _model.StartCountdownAsync(Interval, Break, RoundsCount, _configuration.Value.Pictures);
+        await _model.StartCountdownAsync(Interval, Break, RoundsCount, _settings.Pictures);
         UpdateGuiStateAfterStopCountdown();
     }
 

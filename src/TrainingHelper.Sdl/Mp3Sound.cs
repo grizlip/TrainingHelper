@@ -1,7 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using SDL2;
+using TrainingHelper.Common.Settings;
 using TrainingHelper.Common.Sound;
+using TrainingHelper.Sdl.Settings;
 
 namespace TrainingHelper.Sdl;
 
@@ -21,13 +22,13 @@ internal sealed class Mp3Sound : ISound, IDisposable
 
     public string SelectedAudioDevice => _selectedAudioDeviceName ?? string.Empty;
 
-    public Mp3Sound([FromKeyedServices("soundFiles")] Dictionary<SoundType, string> soundFiles,
-                    [FromKeyedServices("defaultSoundDeviceName")] string? defaultSoundDeviceName)
+    public Mp3Sound(ISettingsService<SoundConfig> settingsService)
     {
         DiscoverAudioDevices();
-        LoadMp3Files(soundFiles);
+        LoadMp3Files(settingsService.Load().SoundFiles);
         // Initialize the SDL_mixer audio system with the default or specified audio device (null means default)
-        InitializeMixer(string.IsNullOrEmpty(defaultSoundDeviceName) ? null : defaultSoundDeviceName);
+        var defaultAudioDevice = settingsService.Load().DefaultAudioDeviceSelection;
+        InitializeMixer(string.IsNullOrEmpty(defaultAudioDevice) ? null : defaultAudioDevice);
     }
 
     public void ChangeAudiDevice(string audioDeviceName)

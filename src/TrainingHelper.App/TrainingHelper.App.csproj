@@ -7,7 +7,6 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
   <ItemGroup>
-    <None Update="appsettings.json" CopyToOutputDirectory="Always" />
     <None Update="nlog.config" CopyToOutputDirectory="Always" />
   </ItemGroup>
   <ItemGroup>
@@ -24,7 +23,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.9" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.9" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.7" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.9" />
     <PackageReference Include="NLog" Version="6.1.2" />
     <PackageReference Include="Xaml.Behaviors.Avalonia" Version="12.0.0.1" />
     <ProjectReference Include="..\TrainingHelper.Common\TrainingHelper.Common.csproj" />
