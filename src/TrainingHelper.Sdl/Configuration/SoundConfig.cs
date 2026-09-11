@@ -1,4 +1,4 @@
-using TrainingHelper.Common.Configuration;
+using TrainingHelper.Common.Sound;
 
 internal class SoundConfig
 {

@@ -1,4 +1,4 @@
-namespace TrainingHelper.Common.Configuration;
+namespace TrainingHelper.Common.Sound;
 
 public enum SoundType 
 {

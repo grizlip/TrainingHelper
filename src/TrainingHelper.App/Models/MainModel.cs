@@ -7,11 +7,11 @@ using Microsoft.Extensions.Options;
 using NLog;
 using TrainingHelper.Common.Sound;
 using TrainingHelper.Common.Exercise;
-using TrainingHelper.Common.Configuration;
+using TrainingHelper.App.Configuration;
 
 namespace TrainingHelper.App.Models;
 
-public class MainModel
+internal class MainModel
 {
     public event EventHandler<(int SecondsPassed, int TotalSeconds, int CurrentRound, bool Work, string ImagPath)>? CountdownStateChanged;
     public IReadOnlyCollection<string> AudioDevices => _sound.SoundDevicesNames;

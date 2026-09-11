@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using SDL2;
-using TrainingHelper.Common.Configuration;
 using TrainingHelper.Common.Sound;
 
 namespace TrainingHelper.Sdl;

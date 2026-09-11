@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using TrainingHelper.Common.Configuration;
 using TrainingHelper.Common.Sound;
 
 namespace TrainingHelper.Sdl;

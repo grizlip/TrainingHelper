@@ -7,12 +7,12 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Options;
 using NLog;
+using TrainingHelper.App.Configuration;
 using TrainingHelper.App.Models;
-using TrainingHelper.Common.Configuration;
 
 namespace TrainingHelper.App.ViewModels;
 
-public partial class MainWindowViewModel : ObservableObject
+internal partial class MainWindowViewModel : ObservableObject
 {
     [ObservableProperty]
     private TimeSpan _interval = TimeSpan.FromSeconds(5);
