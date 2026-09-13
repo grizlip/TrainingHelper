@@ -21,14 +21,17 @@ internal sealed class Mp3Sound : ISound, IDisposable
     public IReadOnlyCollection<string> SoundDevicesNames => _soundDevicesNames;
 
     public string SelectedAudioDevice => _selectedAudioDeviceName ?? string.Empty;
-
+    
+    private readonly ISettingsService<SoundConfig> _settingsService;
+    
     public Mp3Sound(ISettingsService<SoundConfig> settingsService)
     {
+        _settingsService = settingsService;
         DiscoverAudioDevices();
         LoadMp3Files(settingsService.Load().SoundFiles);
         // Initialize the SDL_mixer audio system with the default or specified audio device (null means default)
-        var defaultAudioDevice = settingsService.Load().DefaultAudioDeviceSelection;
-        InitializeMixer(string.IsNullOrEmpty(defaultAudioDevice) ? null : defaultAudioDevice);
+        _selectedAudioDeviceName = settingsService.Load().DefaultAudioDeviceSelection;
+        InitializeMixer(string.IsNullOrEmpty(_selectedAudioDeviceName) ? null : _selectedAudioDeviceName);
     }
 
     public void ChangeAudiDevice(string audioDeviceName)
@@ -95,6 +98,11 @@ internal sealed class Mp3Sound : ISound, IDisposable
         {
             _playLock.Release();
         }
+        _settingsService.Save(new SoundConfig()
+        {
+            SoundFiles = _settingsService.Load().SoundFiles,
+            DefaultAudioDeviceSelection = audioDeviceName
+        });
     }
 
     public async Task PlayWorkJingleAsync(CancellationToken ct) => await PlayMp3Async(SoundType.Work, ct);

@@ -30,9 +30,10 @@ internal class SDLSound : IDisposable, ISound
         (783.99, 100), // G5 
     ];
     private readonly (double Frequency, int Milliseconds)[] _countdownJingle = [(440, 50)];
-
+    private readonly ISettingsService<SoundConfig> _settingsService;
     public SDLSound(ISettingsService<SoundConfig> settingsService)
     {
+        _settingsService = settingsService;
         if (SDL.SDL_Init(SDL.SDL_INIT_AUDIO) < 0)
         {
             _logger.Error($"Can't initialize SDL audio. {SDL.SDL_GetError()}");
@@ -66,6 +67,11 @@ internal class SDLSound : IDisposable, ISound
             SDL.SDL_CloseAudioDevice(_soundDeviceId);
         }
         OpenAudioDevice(audioDeviceName);
+        _settingsService.Save(new SoundConfig()
+        {
+            SoundFiles = _settingsService.Load().SoundFiles,
+            DefaultAudioDeviceSelection = audioDeviceName
+        });
     }
 
     public async Task PlayCountdownJingleAsync(CancellationToken ct) => await PlaySoundAsync(_countdownJingle, ct);
