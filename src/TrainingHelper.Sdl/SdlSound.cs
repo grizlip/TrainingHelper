@@ -9,7 +9,22 @@ namespace TrainingHelper.Sdl;
 internal class SDLSound : IDisposable, ISound
 {
     public IReadOnlyCollection<string> SoundDevicesNames => _soundDevicesNames;
-    public string SelectedAudioDevice => _soundDeviceId != 0 ? SDL.SDL_GetAudioDeviceName((int)_soundDeviceId, 0) : string.Empty;
+    public string SelectedAudioDevice
+    {
+        get
+        {
+            string? deviceName = null;
+            if (_soundDeviceId != 0)
+            {
+                deviceName = SDL.SDL_GetAudioDeviceName((int)_soundDeviceId - 1, 0);
+                if (deviceName == null)
+                {
+                    _logger.Error($"Error while trying to read audio device name: {SDL.SDL_GetError()}");
+                }
+            }
+            return deviceName ?? string.Empty;
+        }
+    }
 
     private double _samplingIndex = 0;
     private SDL.SDL_AudioSpec _haveAudioSpec;
@@ -67,11 +82,6 @@ internal class SDLSound : IDisposable, ISound
             SDL.SDL_CloseAudioDevice(_soundDeviceId);
         }
         OpenAudioDevice(audioDeviceName);
-        _settingsService.Save(new SoundConfig()
-        {
-            SoundFiles = _settingsService.Load().SoundFiles,
-            DefaultAudioDeviceSelection = audioDeviceName
-        });
     }
 
     public async Task PlayCountdownJingleAsync(CancellationToken ct) => await PlaySoundAsync(_countdownJingle, ct);
@@ -125,6 +135,14 @@ internal class SDLSound : IDisposable, ISound
         else if (want.format != _haveAudioSpec.format)
         {
             _logger.Error($"Failed to get the desired AudioSpec. Instead got: frequency: {_haveAudioSpec.freq}, format: {_haveAudioSpec.format}, channels: {_haveAudioSpec.channels}, samples: {_haveAudioSpec.samples}, sizes: {_haveAudioSpec.size}");
+        }
+        else
+        {
+            _settingsService.Save(new SoundConfig()
+            {
+                SoundFiles = _settingsService.Load().SoundFiles,
+                DefaultAudioDeviceSelection = deviceName
+            });
         }
 
     }
