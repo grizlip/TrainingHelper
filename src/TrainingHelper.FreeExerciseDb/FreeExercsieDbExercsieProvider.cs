@@ -5,6 +5,7 @@ using TrainingHelper.Common.Exercise;
 using TrainingHelper.Common.Settings;
 using TrainingHelper.FreeExerciseDb.Settings;
 using TrainingHelper.FreeExerciseDb.JSON;
+using System.Text.Json.Serialization;
 
 namespace TrainingHelper.FreeExerciseDb;
 
@@ -67,16 +68,25 @@ internal class FreeExercsieDbExercsieProvider : IExerciseProvider
 
         var options = new JsonSerializerOptions
         {
-            PropertyNameCaseInsensitive = true
+            PropertyNameCaseInsensitive = true,
+            UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
         };
 
-        await foreach (var exercise in JsonSerializer.DeserializeAsyncEnumerable<Exercise>(stream, options, CancellationToken.None))
+        try
         {
-            if (exercise is not null && !string.IsNullOrEmpty(exercise.Id))
+            await foreach (var exercise in JsonSerializer.DeserializeAsyncEnumerable<Exercise>(stream, options, CancellationToken.None))
             {
-                result.TryAdd(exercise.Id, exercise);
+                if (exercise is not null && !string.IsNullOrEmpty(exercise.Id))
+                {
+                    result.TryAdd(exercise.Id, exercise);
+                }
             }
         }
+        catch (JsonException je)
+        {
+            _logger.Warn("Error deserializing exercises from JSON file", je);
+        }
+        
         return result;
     }
 }
