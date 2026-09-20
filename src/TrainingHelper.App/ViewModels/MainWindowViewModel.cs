@@ -110,15 +110,13 @@ internal partial class MainWindowViewModel : ObservableObject
     private async Task StopCountdown()
     {
         await _model.StopCountdownAsync();
-        TotalSeconds = (int)Interval.TotalSeconds;
         UpdateGuiStateAfterStopCountdown();
     }
 
     [RelayCommand()]
     private async Task StartCountdown()
     {
-        TotalSeconds = (int)Interval.TotalSeconds;
-        SecondsPassed = 0;
+        await StopCountdown();
         IsCountdownInProgress = true;
         await _model.StartCountdownAsync(Interval, Break, RoundsCount, _settings.Pictures);
         UpdateGuiStateAfterStopCountdown();
@@ -129,9 +127,11 @@ internal partial class MainWindowViewModel : ObservableObject
     {
         _model.PauseResumeCountdown();
     }
+
     private void UpdateGuiStateAfterStopCountdown()
     {
         SecondsPassed = 0;
+        TotalSeconds = (int)Interval.TotalSeconds;
         IsCountdownInProgress = false;
         CurrentRound = 1;
         Work = true;
