@@ -60,6 +60,7 @@ internal partial class MainWindowViewModel : ObservableObject
 
     public MainWindowViewModel(MainModel model, ISettingsService<AppSettings> settingsService)
     {
+        _logger.Trace($"===App started at {DateTime.Now}===");
         _settings = settingsService.Load();
         ShowImages = _settings.Pictures.Any();
         _model = model;

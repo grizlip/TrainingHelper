@@ -9,23 +9,8 @@ namespace TrainingHelper.Sdl;
 internal class SDLSound : IDisposable, ISound
 {
     public IReadOnlyCollection<string> SoundDevicesNames => _soundDevicesNames;
-    public string SelectedAudioDevice
-    {
-        get
-        {
-            string? deviceName = null;
-            if (_soundDeviceId != 0)
-            {
-                deviceName = SDL.SDL_GetAudioDeviceName((int)_soundDeviceId - 1, 0);
-                if (deviceName == null)
-                {
-                    _logger.Error($"Error while trying to read audio device name: {SDL.SDL_GetError()}");
-                }
-            }
-            return deviceName ?? string.Empty;
-        }
-    }
-
+    public string SelectedAudioDevice => _settingsService.Load().DefaultAudioDeviceSelection ?? string.Empty;
+    
     private double _samplingIndex = 0;
     private SDL.SDL_AudioSpec _haveAudioSpec;
     private uint _soundDeviceId;
