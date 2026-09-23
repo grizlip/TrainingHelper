@@ -43,17 +43,21 @@
     </Window.Resources>
     <TabControl Margin="5">
         <TabItem Header="Workout">
-            <Grid RowDefinitions="Auto,Auto, *">
-                <DockPanel Grid.Row="0" LastChildFill="True">
+            <Grid RowDefinitions="Auto,*">
+                <DockPanel Grid.Row="0">
                     <Button DockPanel.Dock="Left" Command="{Binding StartCountdownCommand}">Start</Button>
                     <Button DockPanel.Dock="Left" Command="{Binding PauseResumeCountdownCommand}">Pause/Resume</Button>
                     <Button DockPanel.Dock="Left" Command="{Binding StopCountdownCommand}">Stop</Button>
-                </DockPanel>
-                <StackPanel Grid.Row="1">
-                    <StackPanel Orientation="Horizontal">
-                        <Label VerticalAlignment="Center">Current round: </Label>
-                        <Label VerticalAlignment="Center" Content="{Binding CurrentRound}" />
-                        <Label IsVisible="{Binding IsCountdownInProgress}">
+                    <Separator Height="NaN" Width="1" />
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Left" Spacing="5">
+                        <StackPanel.Styles>
+                            <Style Selector="Label">
+                                <Setter Property="VerticalAlignment" Value="Center" />
+                            </Style>
+                        </StackPanel.Styles>
+                        <Label>Current round: </Label>
+                        <Label Content="{Binding CurrentRound}" />
+                        <Label>
                             <Interaction.Behaviors>
                                 <DataTrigger Binding="{Binding Work}" Value="True">
                                     <ChangePropertyAction PropertyName="Content" Value="Work" />
@@ -63,20 +67,25 @@
                                 </DataTrigger>
                             </Interaction.Behaviors>
                         </Label>
+                        <Separator Height="NaN" Width="1" />
+                        <Label>Time: </Label>
+                        <Label>
+                            <Label.Content>
+                                <MultiBinding Converter="{StaticResource SecondsToTimeConverter}">
+                                    <Binding Path="SecondsPassed" />
+                                    <Binding Path="TotalSeconds" />
+                                </MultiBinding>
+                            </Label.Content>
+                        </Label>
                     </StackPanel>
-                    <ProgressBar Margin="0 10" Height="20"
-                                 Minimum="0" Maximum="{Binding TotalSeconds}"
-                                 Value="{Binding SecondsPassed}"
-                                 ShowProgressText="True">
-                        <ProgressBar.ProgressTextFormat>
-                            <MultiBinding Converter="{StaticResource SecondsToTimeConverter}">
-                                <Binding Path="SecondsPassed" />
-                                <Binding Path="TotalSeconds" />
-                            </MultiBinding>
-                        </ProgressBar.ProgressTextFormat>
-                    </ProgressBar>
-                </StackPanel>
-                <ContentControl Grid.Row="2">
+                </DockPanel>
+                <ProgressBar Grid.Row="1" Margin="5"
+                             VerticalAlignment="Stretch"
+                             Orientation="Vertical"
+                             Minimum="0" Maximum="{Binding TotalSeconds}"
+                             Value="{Binding SecondsPassed}">
+                </ProgressBar>
+                <ContentControl Grid.Row="1" VerticalAlignment="Stretch" Margin="15">
                     <Interaction.Behaviors>
                         <DataTriggerBehavior Binding="{Binding ShowImages}" ComparisonCondition="Equal"
                                              Value="false">
