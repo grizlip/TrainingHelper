@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using NLog;
@@ -45,32 +44,17 @@ internal class MainModel
         _sound.ChangeAudiDevice(deviceName);
     }
 
-    public async Task StartCountdownAsync(TimeSpan workTime, TimeSpan breakTime, int roundCount, IEnumerable<string> images)
+    public async Task StartCountdownAsync(IEnumerable<IRoundDefinition> roundDefinitions)
     {
         _countdownCts?.Cancel();
         _countdownCts?.Dispose();
 
         _countdownCts = new CancellationTokenSource();
         await PlaySoundAsync(_sound.PlayStartJingleAsyncAsync, _countdownCts.Token);
-        Func<TimeSpan, TimeSpan, int, Task<bool>> roundCountDownFuncAsync = images.Any() ?
-        async (work, @break, round) =>
-            {
-                bool result = true;
-                foreach (var currentImage in images)
-                {
-                    if (!(result = await DoIntervalAsync(work, @break, round, currentImage)))
-                    {
-                        break;
-                    }
-                }
-                return result;
-            }
-        :
-        async (work, @break, round) => await DoIntervalAsync(work, @break, round);
 
-        for (int currentRound = 0; currentRound < roundCount; currentRound++)
+        foreach (var round in roundDefinitions)
         {
-            if (!await roundCountDownFuncAsync(workTime, breakTime, currentRound))
+            if (!await DoIntervalAsync(round.Interval, round.Break, round.RoundNumber, round.RoundImagePath))
             {
                 return;
             }
@@ -78,7 +62,7 @@ internal class MainModel
 
         await PlaySoundAsync(_sound.PlayEndJingleAsyncAsync, _countdownCts.Token);
 
-        async Task<bool> DoIntervalAsync(TimeSpan workTime, TimeSpan breakTime, int currentRound, string currentImage = "")
+        async Task<bool> DoIntervalAsync(TimeSpan workTime, TimeSpan breakTime, int currentRound, string currentImage)
         {
             if (_countdownCts.Token.IsCancellationRequested)
             {

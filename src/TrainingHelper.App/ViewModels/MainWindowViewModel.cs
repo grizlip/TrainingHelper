@@ -54,6 +54,10 @@ internal partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private string? _selectedAudioDevice;
+
+    [ObservableProperty]
+    private ObservableCollection<RoundViewModel> _rounds = [];
+
     private readonly MainModel _model;
     private readonly AppSettings _settings;
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
@@ -104,7 +108,7 @@ internal partial class MainWindowViewModel : ObservableObject
         }
         TotalSeconds = e.TotalSeconds;
         SecondsPassed = e.SecondsPassed;
-        CurrentRound = e.CurrentRound + 1;
+        CurrentRound = e.CurrentRound;
     }
 
     [RelayCommand(CanExecute = nameof(IsCountdownInProgress))]
@@ -119,7 +123,22 @@ internal partial class MainWindowViewModel : ObservableObject
     {
         await StopCountdown();
         IsCountdownInProgress = true;
-        await _model.StartCountdownAsync(Interval, Break, RoundsCount, _settings.Pictures);
+        Rounds.Clear();
+
+        foreach(var picPath in _settings.Pictures)
+        {
+            Rounds.Add(new RoundViewModel(Rounds.Count + 1, Interval, Break, true, picPath));    
+        }
+        
+        if(Rounds.Count == 0)
+        {
+            for(int i = 0; i < RoundsCount; i++)
+            {
+                Rounds.Add(new RoundViewModel(i + 1, Interval, Break, true, string.Empty));
+            }
+        }
+
+        await _model.StartCountdownAsync(Rounds);
         UpdateGuiStateAfterStopCountdown();
     }
 
