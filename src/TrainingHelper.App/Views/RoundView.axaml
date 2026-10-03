@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TrainingHelper.App.ViewModels"
+             x:Class="TrainingHelper.App.Views.RoundView"
+             x:DataType="vm:MainWindowViewModel">
+    <StackPanel>
+        <StackPanel.Styles>
+            <Style Selector="TimePicker, NumericUpDown">
+                <Setter Property="Margin" Value="5" />
+                <Setter Property="IsEnabled" Value="{Binding !IsCountdownInProgress}" />
+            </Style>
+            <Style Selector="TimePicker">
+                <Setter Property="ClockIdentifier" Value="24HourClock" />
+                <Setter Property="UseSeconds" Value="True" />
+            </Style>
+            <Style Selector="Label">
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+        </StackPanel.Styles>
+        <Label>Interval: </Label>
+        <TimePicker SelectedTime="{Binding Interval}" />
+        <Label>Break: </Label>
+        <TimePicker SelectedTime="{Binding Break}" />
+        <Label>Rounds count: </Label>
+        <NumericUpDown Value="{Binding RoundsCount}"
+                       HorizontalAlignment="Left"
+                       VerticalContentAlignment="Center"
+                       Minimum="1" Maximum="200"
+                       Increment="1"
+                       ShowButtonSpinner="False" />
+    </StackPanel>
+</UserControl>
