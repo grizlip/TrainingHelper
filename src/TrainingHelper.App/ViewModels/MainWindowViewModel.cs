@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -21,9 +20,6 @@ internal partial class MainWindowViewModel : ObservableObject
     private TimeSpan _break = TimeSpan.FromSeconds(3);
 
     [ObservableProperty]
-    private int _roundsCount = 1;
-
-    [ObservableProperty]
     private int _secondsPassed = 0;
 
     [ObservableProperty]
@@ -32,7 +28,14 @@ internal partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(PauseResumeCountdownCommand))]
     [NotifyCanExecuteChangedFor(nameof(StopCountdownCommand))]
+    [NotifyCanExecuteChangedFor(nameof(AddRoundCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RemoveRoundCommand))]
     private bool _isCountdownInProgress = false;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RemoveRoundCommand))]
+    [NotifyCanExecuteChangedFor(nameof(StartCountdownCommand))]
+    private bool _roundsCountBiggerThanZero = false;
 
     [ObservableProperty]
     private int _currentRound = 1;
@@ -58,6 +61,9 @@ internal partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private ObservableCollection<RoundViewModel> _rounds = [];
 
+    private bool IsCoundownNotInProgress() => !IsCountdownInProgress;
+    private bool CanRemoveRoundOrStart() => Rounds.Count > 0 && IsCoundownNotInProgress();
+
     private readonly MainModel _model;
     private readonly AppSettings _settings;
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
@@ -66,7 +72,6 @@ internal partial class MainWindowViewModel : ObservableObject
     {
         _logger.Trace($"===App started at {DateTime.Now}===");
         _settings = settingsService.Load();
-        ShowImages = _settings.Pictures.Any();
         _model = model;
         _model.CountdownStateChanged += OnCountdownStateChanged;
         Interval = _settings.WorkTime;
@@ -78,6 +83,12 @@ internal partial class MainWindowViewModel : ObservableObject
         {
             SelectedAudioDevice = model.SelectedAudioDevice;
         }
+
+        Rounds.CollectionChanged += (s, e) =>
+        {
+            RemoveRoundCommand.NotifyCanExecuteChanged();
+            StartCountdownCommand.NotifyCanExecuteChanged();
+        };
     }
 
     partial void OnSelectedAudioDeviceChanged(string? value)
@@ -105,10 +116,26 @@ internal partial class MainWindowViewModel : ObservableObject
             Photo?.Dispose();
             Photo = null;
             Photo = new Bitmap(e.ImagPath);
+            ShowImages = true;
         }
         TotalSeconds = e.TotalSeconds;
         SecondsPassed = e.SecondsPassed;
         CurrentRound = e.CurrentRound;
+    }
+
+    [RelayCommand(CanExecute = nameof(IsCoundownNotInProgress))]
+    private async Task AddRound()
+    {
+        Rounds.Add(new RoundViewModel(Rounds.Count + 1, Interval, Break, true, string.Empty));
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRemoveRoundOrStart))]
+    private async Task RemoveRound()
+    {
+        if (Rounds.Count > 0)
+        {
+            Rounds.RemoveAt(Rounds.Count - 1);
+        }
     }
 
     [RelayCommand(CanExecute = nameof(IsCountdownInProgress))]
@@ -118,25 +145,11 @@ internal partial class MainWindowViewModel : ObservableObject
         UpdateGuiStateAfterStopCountdown();
     }
 
-    [RelayCommand()]
+    [RelayCommand(CanExecute = nameof(CanRemoveRoundOrStart))]
     private async Task StartCountdown()
     {
         await StopCountdown();
         IsCountdownInProgress = true;
-        Rounds.Clear();
-
-        foreach(var picPath in _settings.Pictures)
-        {
-            Rounds.Add(new RoundViewModel(Rounds.Count + 1, Interval, Break, true, picPath));    
-        }
-        
-        if(Rounds.Count == 0)
-        {
-            for(int i = 0; i < RoundsCount; i++)
-            {
-                Rounds.Add(new RoundViewModel(i + 1, Interval, Break, true, string.Empty));
-            }
-        }
 
         await _model.StartCountdownAsync(Rounds);
         UpdateGuiStateAfterStopCountdown();

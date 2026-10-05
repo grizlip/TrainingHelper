@@ -103,7 +103,21 @@
             </Grid>
         </TabItem>
         <TabItem Header="Plan">
-            <views:RoundView />
+            <Grid RowDefinitions="Auto,*" IsEnabled="{Binding !IsCountdownInProgress}">
+                <DockPanel Grid.Row="0">
+                    <Button DockPanel.Dock="Left" Command="{Binding AddRoundCommand}">Add</Button>
+                    <Button DockPanel.Dock="Left" Command="{Binding RemoveRoundCommand}">Remove</Button>
+                </DockPanel>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl  ItemsSource="{Binding Rounds}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <views:RoundView />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
         </TabItem>
         <TabItem Header="Settings">
             <StackPanel>
