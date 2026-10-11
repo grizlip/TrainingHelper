@@ -88,6 +88,35 @@ internal partial class MainWindowViewModel : ObservableObject
         {
             RemoveRoundCommand.NotifyCanExecuteChanged();
             StartCountdownCommand.NotifyCanExecuteChanged();
+            switch (e.Action)
+            {
+                case System.Collections.Specialized.NotifyCollectionChangedAction.Add:
+                    if (Rounds.Count == 1)
+                    {
+                        Rounds[0].PropertyChanged += Round_PropertyChanged;
+                    }
+                    break;
+                case System.Collections.Specialized.NotifyCollectionChangedAction.Remove:
+                    if (Rounds.Count == 0)
+                    {
+                        if (e.OldItems?.Count > 0)
+                        {
+                            foreach (RoundViewModel olditem in e.OldItems)
+                            {
+                                olditem.PropertyChanged -= Round_PropertyChanged;
+                            }
+                        }
+                    }
+                    break;
+                case System.Collections.Specialized.NotifyCollectionChangedAction.Move:
+
+                    foreach (RoundViewModel item in Rounds)
+                    {
+                        item.PropertyChanged -= Round_PropertyChanged;
+                    }
+                    Rounds[0].PropertyChanged += Round_PropertyChanged;
+                    break;
+            }
         };
     }
 
@@ -170,5 +199,17 @@ internal partial class MainWindowViewModel : ObservableObject
         Work = true;
         Photo?.Dispose();
         Photo = null;
+    }
+
+    private void Round_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(RoundViewModel.Interval))
+        {
+            Interval = Rounds[0].Interval;
+        }
+        else if (e.PropertyName == nameof(RoundViewModel.Break))
+        {
+            Break = Rounds[0].Break;
+        }
     }
 }
