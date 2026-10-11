@@ -3,22 +3,24 @@
              xmlns:vm="using:TrainingHelper.App.ViewModels"
              x:Class="TrainingHelper.App.Views.RoundView"
              x:DataType="vm:RoundViewModel">
-    <StackPanel>
-        <StackPanel.Styles>
-            <Style Selector="TimePicker">
-                <Setter Property="Margin" Value="5" />
-                <Setter Property="ClockIdentifier" Value="24HourClock" />
-                <Setter Property="UseSeconds" Value="True" />
-            </Style>
-            <Style Selector="Label">
-                <Setter Property="VerticalAlignment" Value="Center" />
-            </Style>
-        </StackPanel.Styles>
-        <Label>Round number: </Label>
-        <Label Content="{Binding RoundNumber}" />
-        <Label>Interval: </Label>
-        <TimePicker SelectedTime="{Binding Interval}" />
-        <Label>Break: </Label>
-        <TimePicker SelectedTime="{Binding Break}" />
-    </StackPanel>
+    <Grid ColumnDefinitions="*,Auto">
+        <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="*,*,*">
+            <Grid.Styles>
+                <Style Selector="TimePicker">
+                    <Setter Property="Margin" Value="5" />
+                    <Setter Property="ClockIdentifier" Value="24HourClock" />
+                    <Setter Property="UseSeconds" Value="True" />
+                </Style>
+                <Style Selector="Label">
+                    <Setter Property="VerticalAlignment" Value="Center" />
+                </Style>
+            </Grid.Styles>
+            <Label Grid.Row="0" Grid.Column="0">Round number: </Label>
+            <Label Grid.Row="0" Grid.Column="1" Content="{Binding RoundNumber}"/>
+            <Label Grid.Row="1" Grid.Column="0">Interval: </Label>
+            <TimePicker Grid.Row="1" Grid.Column="1" SelectedTime="{Binding Interval}" />
+            <Label Grid.Row="2" Grid.Column="0">Break: </Label>
+            <TimePicker Grid.Row="2" Grid.Column="1" SelectedTime="{Binding Break}" />
+        </Grid>
+    </Grid>
 </UserControl>
