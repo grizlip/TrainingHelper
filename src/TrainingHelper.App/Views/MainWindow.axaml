@@ -108,15 +108,13 @@
                     <Button DockPanel.Dock="Left" Command="{Binding AddRoundCommand}">Add</Button>
                     <Button DockPanel.Dock="Left" Command="{Binding RemoveRoundCommand}">Remove</Button>
                 </DockPanel>
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <ItemsControl  ItemsSource="{Binding Rounds}">
+                    <ListBox Grid.Row="1" ItemsSource="{Binding Rounds}" SelectedIndex="{Binding SelectedRoundIndex}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <views:RoundView />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
+                    </ListBox>
             </Grid>
         </TabItem>
         <TabItem Header="Settings">

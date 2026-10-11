@@ -26,16 +26,15 @@ internal partial class MainWindowViewModel : ObservableObject
     private int _totalSeconds = 0;
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RemoveRoundCommand))]
+    private int _selectedRoundIndex = 0;
+
+    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(PauseResumeCountdownCommand))]
     [NotifyCanExecuteChangedFor(nameof(StopCountdownCommand))]
     [NotifyCanExecuteChangedFor(nameof(AddRoundCommand))]
     [NotifyCanExecuteChangedFor(nameof(RemoveRoundCommand))]
     private bool _isCountdownInProgress = false;
-
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(RemoveRoundCommand))]
-    [NotifyCanExecuteChangedFor(nameof(StartCountdownCommand))]
-    private bool _roundsCountBiggerThanZero = false;
 
     [ObservableProperty]
     private int _currentRound = 1;
@@ -62,7 +61,10 @@ internal partial class MainWindowViewModel : ObservableObject
     private ObservableCollection<RoundViewModel> _rounds = [];
 
     private bool IsCoundownNotInProgress() => !IsCountdownInProgress;
-    private bool CanRemoveRoundOrStart() => Rounds.Count > 0 && IsCoundownNotInProgress();
+
+    private bool CanStart() => Rounds.Count > 0 && IsCoundownNotInProgress();
+
+    private bool CanRemoveRound() => SelectedRoundIndex >= 0 && SelectedRoundIndex < Rounds.Count && IsCoundownNotInProgress();
 
     private readonly MainModel _model;
     private readonly AppSettings _settings;
@@ -93,7 +95,7 @@ internal partial class MainWindowViewModel : ObservableObject
                 case System.Collections.Specialized.NotifyCollectionChangedAction.Add:
                     if (Rounds.Count == 1)
                     {
-                        Rounds[0].PropertyChanged += Round_PropertyChanged;
+                        Rounds[0].PropertyChanged += FirstRound_PropertyChanged;
                     }
                     break;
                 case System.Collections.Specialized.NotifyCollectionChangedAction.Remove:
@@ -103,7 +105,7 @@ internal partial class MainWindowViewModel : ObservableObject
                         {
                             foreach (RoundViewModel olditem in e.OldItems)
                             {
-                                olditem.PropertyChanged -= Round_PropertyChanged;
+                                olditem.PropertyChanged -= FirstRound_PropertyChanged;
                             }
                         }
                     }
@@ -112,9 +114,9 @@ internal partial class MainWindowViewModel : ObservableObject
 
                     foreach (RoundViewModel item in Rounds)
                     {
-                        item.PropertyChanged -= Round_PropertyChanged;
+                        item.PropertyChanged -= FirstRound_PropertyChanged;
                     }
-                    Rounds[0].PropertyChanged += Round_PropertyChanged;
+                    Rounds[0].PropertyChanged += FirstRound_PropertyChanged;
                     break;
             }
         };
@@ -158,12 +160,16 @@ internal partial class MainWindowViewModel : ObservableObject
         Rounds.Add(new RoundViewModel(Interval, Break, true, string.Empty));
     }
 
-    [RelayCommand(CanExecute = nameof(CanRemoveRoundOrStart))]
+    [RelayCommand(CanExecute = nameof(CanRemoveRound))]
     private async Task RemoveRound()
     {
-        if (Rounds.Count > 0)
+        if (Rounds.Count > 0 && SelectedRoundIndex >= 0 && SelectedRoundIndex < Rounds.Count)
         {
-            Rounds.RemoveAt(Rounds.Count - 1);
+            Rounds.RemoveAt(SelectedRoundIndex);
+        }
+        else
+        {
+            _logger.Warn($"Can't remove round at index {SelectedRoundIndex}. Rounds count: {Rounds.Count}");
         }
     }
 
@@ -174,7 +180,7 @@ internal partial class MainWindowViewModel : ObservableObject
         UpdateGuiStateAfterStopCountdown();
     }
 
-    [RelayCommand(CanExecute = nameof(CanRemoveRoundOrStart))]
+    [RelayCommand(CanExecute = nameof(CanStart))]
     private async Task StartCountdown()
     {
         await StopCountdown();
@@ -201,7 +207,7 @@ internal partial class MainWindowViewModel : ObservableObject
         Photo = null;
     }
 
-    private void Round_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    private void FirstRound_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(RoundViewModel.Interval))
         {
