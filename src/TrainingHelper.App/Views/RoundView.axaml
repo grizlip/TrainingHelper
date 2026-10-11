@@ -15,12 +15,13 @@
                     <Setter Property="VerticalAlignment" Value="Center" />
                 </Style>
             </Grid.Styles>
-            <Label Grid.Row="0" Grid.Column="0">Round number: </Label>
-            <Label Grid.Row="0" Grid.Column="1" Content="{Binding RoundNumber}"/>
-            <Label Grid.Row="1" Grid.Column="0">Interval: </Label>
-            <TimePicker Grid.Row="1" Grid.Column="1" SelectedTime="{Binding Interval}" />
-            <Label Grid.Row="2" Grid.Column="0">Break: </Label>
-            <TimePicker Grid.Row="2" Grid.Column="1" SelectedTime="{Binding Break}" />
+            <Label Grid.Row="0" Grid.Column="0">Interval: </Label>
+            <TimePicker Grid.Row="0" Grid.Column="1" SelectedTime="{Binding Interval}" />
+            <Label Grid.Row="1" Grid.Column="0">Break: </Label>
+            <TimePicker Grid.Row="1" Grid.Column="1" SelectedTime="{Binding Break}" />
+            <Label Grid.Row="2" Grid.Column="0">Repet: </Label>
+            <NumericUpDown FormatString="0" Margin="5" Grid.Row="2" Grid.Column="1" Minimum="1" Maximum="100" Value="{Binding Repetitions}" />
         </Grid>
+        <ContentControl Grid.Column="1"/>
     </Grid>
 </UserControl>

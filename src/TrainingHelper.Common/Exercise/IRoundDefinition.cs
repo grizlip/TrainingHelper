@@ -2,9 +2,9 @@ namespace TrainingHelper.Common.Exercise;
 
 public interface IRoundDefinition
 {
-    int RoundNumber { get; }
     TimeSpan Interval { get; }
     TimeSpan Break { get; }
     bool Work { get; }
+    int Repetitions { get; }
     string RoundImagePath { get; }
 }

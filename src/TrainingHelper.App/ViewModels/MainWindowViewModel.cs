@@ -155,7 +155,7 @@ internal partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(IsCoundownNotInProgress))]
     private async Task AddRound()
     {
-        Rounds.Add(new RoundViewModel(Rounds.Count + 1, Interval, Break, true, string.Empty));
+        Rounds.Add(new RoundViewModel(Interval, Break, true, string.Empty));
     }
 
     [RelayCommand(CanExecute = nameof(CanRemoveRoundOrStart))]

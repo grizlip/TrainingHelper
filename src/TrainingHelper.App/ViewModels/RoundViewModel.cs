@@ -7,9 +7,6 @@ namespace TrainingHelper.App.ViewModels;
 internal partial class RoundViewModel : ObservableObject, IRoundDefinition
 {
     [ObservableProperty]
-    private int _roundNumber;
-
-    [ObservableProperty]
     private TimeSpan _interval;
 
     [ObservableProperty]
@@ -19,11 +16,13 @@ internal partial class RoundViewModel : ObservableObject, IRoundDefinition
     private bool _work;
 
     [ObservableProperty]
+    private int _repetitions = 1;
+
+    [ObservableProperty]
     private string _roundImagePath = string.Empty;
 
-    public RoundViewModel(int roundNumber, TimeSpan interval, TimeSpan breakTime, bool work, string roundImagePath)
+    public RoundViewModel(TimeSpan interval, TimeSpan breakTime, bool work, string roundImagePath)
     {
-        _roundNumber = roundNumber;
         _interval = interval;
         _break = breakTime;
         _work = work;

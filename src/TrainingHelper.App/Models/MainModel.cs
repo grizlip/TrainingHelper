@@ -52,11 +52,16 @@ internal class MainModel
         _countdownCts = new CancellationTokenSource();
         await PlaySoundAsync(_sound.PlayStartJingleAsyncAsync, _countdownCts.Token);
 
+        int roundNumber = 1;
         foreach (var round in roundDefinitions)
         {
-            if (!await DoIntervalAsync(round.Interval, round.Break, round.RoundNumber, round.RoundImagePath))
+            for (int i = 0; i < round.Repetitions; i++)
             {
-                return;
+                if (!await DoIntervalAsync(round.Interval, round.Break, roundNumber, round.RoundImagePath))
+                {
+                    return;
+                }
+                roundNumber++;
             }
         }
 
