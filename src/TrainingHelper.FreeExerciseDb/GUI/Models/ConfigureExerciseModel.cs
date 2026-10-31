@@ -1,29 +1,31 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
-using NLog;
-using TrainingHelper.Common.Exercise;
-using TrainingHelper.Common.Settings;
-using TrainingHelper.FreeExerciseDb.Settings;
-using TrainingHelper.FreeExerciseDb.JSON;
 using System.Text.Json.Serialization;
+using NLog;
+using TrainingHelper.Common.Settings;
+using TrainingHelper.FreeExerciseDb.JSON;
+using TrainingHelper.FreeExerciseDb.Settings;
 
-namespace TrainingHelper.FreeExerciseDb;
+namespace TrainingHelper.FreeExerciseDb.GUI.Models;
 
-internal class FreeExercsieDbExercsieProvider : IExerciseProvider
+internal class ConfigureExerciseModel
 {
+    private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
     private readonly Lazy<Task<ConcurrentDictionary<string, Exercise>>> _exercsies;
     private readonly string _jsonExercsieFile;
-    private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+    private readonly string _imagesBasePath;
 
-    public FreeExercsieDbExercsieProvider(ISettingsService<FreeExerciseDbConfig> settingsService)
+    public ConfigureExerciseModel(ISettingsService<FreeExerciseDbConfig> settingsService)
     {
         _jsonExercsieFile = settingsService.Load().FreeExercsieDbExercsieJson;
+        _imagesBasePath = settingsService.Load().ImagesPathBase;
+
         if (!File.Exists(_jsonExercsieFile))
         {
             throw new ArgumentException(nameof(_jsonExercsieFile));
         }
 
-        _exercsies = new(LoadExercisesAsync);
+        _exercsies = new(LoadExercisesAsync, true);
     }
 
     public async Task<ExerciseDetails?> GetExerciseDetailsAsync(string exercsieId, CancellationToken ct)
@@ -36,7 +38,8 @@ internal class FreeExercsieDbExercsieProvider : IExerciseProvider
 
             if (exercises.TryGetValue(exercsieId, out var exercise))
             {
-                result = new ExerciseDetails() { Name = exercise.Name, Id = exercise.Id };
+                List<string> imgagesPaths = GetFullPathsOfImages(exercise);
+                result = new ExerciseDetails() { Name = exercise.Name, Id = exercise.Id, ImagesPaths = imgagesPaths };
             }
             else
             {
@@ -56,7 +59,7 @@ internal class FreeExercsieDbExercsieProvider : IExerciseProvider
         ct.ThrowIfCancellationRequested();
 
         return exercises.Values
-            .Select(e => new ExerciseDetails() { Name = e.Name, Id = e.Id })
+            .Select(e => new ExerciseDetails() { Name = e.Name, Id = e.Id, ImagesPaths = GetFullPathsOfImages(e) })
             .ToList();
     }
 
@@ -86,7 +89,26 @@ internal class FreeExercsieDbExercsieProvider : IExerciseProvider
         {
             _logger.Warn("Error deserializing exercises from JSON file", je);
         }
-        
+
         return result;
+    }
+
+    private List<string> GetFullPathsOfImages(Exercise exercise)
+    {
+        var imgagesPaths = new List<string>();
+        foreach (var f in exercise.Images)
+        {
+            var iamgePath = Path.Combine(_imagesBasePath, f);
+            if (File.Exists(iamgePath))
+            {
+                imgagesPaths.Add(iamgePath);
+            }
+            else
+            {
+                _logger.Warn($"File {iamgePath} does not exists");
+            }
+        }
+
+        return imgagesPaths;
     }
 }

@@ -4,9 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using NLog;
 using TrainingHelper.Common.Sound;
-using TrainingHelper.Common.Exercise;
 using TrainingHelper.App.Settings;
 using TrainingHelper.Common.Settings;
+using System.Linq;
 
 namespace TrainingHelper.App.Models;
 
@@ -19,7 +19,7 @@ internal class MainModel
 
     private CancellationTokenSource? _countdownCts = null;
     private readonly ISound _sound;
-    private readonly IExerciseProvider _exercsieProvider;
+
     private readonly bool _noSound = false;
     private bool _pause = false;
     private readonly TimeSpan _countdownStart = TimeSpan.Zero;
@@ -27,10 +27,9 @@ internal class MainModel
     private static readonly TimeSpan _maxBeepTime = TimeSpan.FromMilliseconds(200);
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-    public MainModel(ISound sound, IExerciseProvider exerciseProvider, ISettingsService<AppSettings> settingsService)
+    public MainModel(ISound sound, ISettingsService<AppSettings> settingsService)
     {
         _sound = sound;
-        _exercsieProvider = exerciseProvider;
         _countdownStart = settingsService.Load().CountdownStart;
         if (_sound.SoundDevicesNames.Count == 0)
         {
@@ -57,7 +56,7 @@ internal class MainModel
         {
             for (int i = 0; i < round.Repetitions; i++)
             {
-                if (!await DoIntervalAsync(round.Interval, round.Break, roundNumber, round.RoundImagePath))
+                if (!await DoIntervalAsync(round.Interval, round.Break, roundNumber, round.RoundImagesPaths))
                 {
                     return;
                 }
@@ -67,7 +66,7 @@ internal class MainModel
 
         await PlaySoundAsync(_sound.PlayEndJingleAsyncAsync, _countdownCts.Token);
 
-        async Task<bool> DoIntervalAsync(TimeSpan workTime, TimeSpan breakTime, int currentRound, string currentImage)
+        async Task<bool> DoIntervalAsync(TimeSpan workTime, TimeSpan breakTime, int currentRound, IEnumerable<string> currentImages)
         {
             if (_countdownCts.Token.IsCancellationRequested)
             {
@@ -77,9 +76,9 @@ internal class MainModel
             try
             {
                 if (!await PlaySoundAsync(_sound.PlayWorkJingleAsync, _countdownCts.Token) ||
-                   !await CountdownAsync((int)workTime.TotalSeconds, true, currentRound, currentImage, _countdownCts.Token) ||
+                   !await CountdownAsync((int)workTime.TotalSeconds, true, currentRound, currentImages, _countdownCts.Token) ||
                    !await PlaySoundAsync(_sound.PlayBreakJingleAsync, _countdownCts.Token) ||
-                   !await CountdownAsync((int)breakTime.TotalSeconds, false, currentRound, currentImage, _countdownCts.Token))
+                   !await CountdownAsync((int)breakTime.TotalSeconds, false, currentRound, Array.Empty<string>(), _countdownCts.Token))
                 {
                     return false;
                 }
@@ -104,11 +103,11 @@ internal class MainModel
         _pause = !_pause;
     }
 
-    private async Task<bool> CountdownAsync(int totalSeconds, bool work, int currentRound, string imagePath, CancellationToken token)
+    private async Task<bool> CountdownAsync(int totalSeconds, bool work, int currentRound, IEnumerable<string> imagesPaths, CancellationToken token)
     {
         var secondsPassed = 0;
         using PeriodicTimer periodicTimer = new(_oneSecond);
-
+        var imagesList = imagesPaths.ToList();
         try
         {
             while (await periodicTimer.WaitForNextTickAsync(token) && secondsPassed < totalSeconds)
@@ -118,7 +117,8 @@ internal class MainModel
                     continue;
                 }
                 secondsPassed++;
-                CountdownStateChanged?.Invoke(this, (secondsPassed, totalSeconds, currentRound, work, imagePath));
+
+                CountdownStateChanged?.Invoke(this, (secondsPassed, totalSeconds, currentRound, work, imagesList.Count > 0 ? imagesList[secondsPassed % imagesList.Count] : string.Empty));
 
                 if (totalSeconds - secondsPassed <= _countdownStart.TotalSeconds)
                 {

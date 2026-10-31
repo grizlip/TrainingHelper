@@ -8,6 +8,7 @@ using NLog;
 using TrainingHelper.App.Settings;
 using TrainingHelper.App.Models;
 using TrainingHelper.Common.Settings;
+using TrainingHelper.Common.Exercise;
 
 namespace TrainingHelper.App.ViewModels;
 
@@ -68,13 +69,15 @@ internal partial class MainWindowViewModel : ObservableObject
 
     private readonly MainModel _model;
     private readonly AppSettings _settings;
+    private readonly IRoundCustomConfigFactory _roundCustomConfigFactory;
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-    public MainWindowViewModel(MainModel model, ISettingsService<AppSettings> settingsService)
+    public MainWindowViewModel(MainModel model, ISettingsService<AppSettings> settingsService, IRoundCustomConfigFactory roundCustomConfigFactory)
     {
         _logger.Trace($"===App started at {DateTime.Now}===");
         _settings = settingsService.Load();
         _model = model;
+        _roundCustomConfigFactory = roundCustomConfigFactory;
         _model.CountdownStateChanged += OnCountdownStateChanged;
         Interval = _settings.WorkTime;
         Break = _settings.BreakTime;
@@ -142,12 +145,16 @@ internal partial class MainWindowViewModel : ObservableObject
     private void OnCountdownStateChanged(object? sender, (int SecondsPassed, int TotalSeconds, int CurrentRound, bool Work, string ImagPath) e)
     {
         Work = e.Work;
+        Photo?.Dispose();
+        Photo = null;
         if (!string.IsNullOrEmpty(e.ImagPath))
         {
-            Photo?.Dispose();
-            Photo = null;
             Photo = new Bitmap(e.ImagPath);
             ShowImages = true;
+        }
+        else
+        {
+            ShowImages = false;
         }
         TotalSeconds = e.TotalSeconds;
         SecondsPassed = e.SecondsPassed;
@@ -157,7 +164,7 @@ internal partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(IsCoundownNotInProgress))]
     private async Task AddRound()
     {
-        Rounds.Add(new RoundViewModel(Interval, Break, true, string.Empty));
+        Rounds.Add(new RoundViewModel(Interval, Break, true, _roundCustomConfigFactory.Create()));
     }
 
     [RelayCommand(CanExecute = nameof(CanRemoveRound))]

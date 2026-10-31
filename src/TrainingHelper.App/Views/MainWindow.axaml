@@ -108,7 +108,7 @@
                     <Button DockPanel.Dock="Left" Command="{Binding AddRoundCommand}">Add</Button>
                     <Button DockPanel.Dock="Left" Command="{Binding RemoveRoundCommand}">Remove</Button>
                 </DockPanel>
-                    <ListBox Grid.Row="1" ItemsSource="{Binding Rounds}" SelectedIndex="{Binding SelectedRoundIndex}">
+                    <ListBox Grid.Row="1" ItemsSource="{Binding Rounds}" SelectedIndex="{Binding SelectedRoundIndex}" >
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <views:RoundView />

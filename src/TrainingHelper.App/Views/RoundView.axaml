@@ -3,7 +3,7 @@
              xmlns:vm="using:TrainingHelper.App.ViewModels"
              x:Class="TrainingHelper.App.Views.RoundView"
              x:DataType="vm:RoundViewModel">
-    <Grid ColumnDefinitions="*,Auto">
+    <Grid ColumnDefinitions="Auto,*">
         <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="*,*,*">
             <Grid.Styles>
                 <Style Selector="TimePicker">
@@ -22,6 +22,6 @@
             <Label Grid.Row="2" Grid.Column="0">Repet: </Label>
             <NumericUpDown FormatString="0" Margin="5" Grid.Row="2" Grid.Column="1" Minimum="1" Maximum="100" Value="{Binding Repetitions}" />
         </Grid>
-        <ContentControl Grid.Column="1"/>
+        <ContentControl Grid.Column="1"  Content="{Binding CustomConfigControl}" />
     </Grid>
 </UserControl>

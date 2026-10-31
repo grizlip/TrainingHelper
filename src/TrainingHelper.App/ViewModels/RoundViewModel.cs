@@ -1,11 +1,16 @@
 using System;
+using System.Collections.Generic;
+using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
+using TrainingHelper.App.Models;
 using TrainingHelper.Common.Exercise;
 
 namespace TrainingHelper.App.ViewModels;
 
 internal partial class RoundViewModel : ObservableObject, IRoundDefinition
 {
+    public IEnumerable<string> RoundImagesPaths => _roundCustomConfig?.ExercsieImagesPaths ?? new List<string>();
+
     [ObservableProperty]
     private TimeSpan _interval;
 
@@ -19,13 +24,16 @@ internal partial class RoundViewModel : ObservableObject, IRoundDefinition
     private int _repetitions = 1;
 
     [ObservableProperty]
-    private string _roundImagePath = string.Empty;
+    private Control? _customConfigControl;
 
-    public RoundViewModel(TimeSpan interval, TimeSpan breakTime, bool work, string roundImagePath)
+    private readonly IRoundCustomConfig? _roundCustomConfig;
+
+    public RoundViewModel(TimeSpan interval, TimeSpan breakTime, bool work, IRoundCustomConfig roundCustomConfig)
     {
         _interval = interval;
         _break = breakTime;
         _work = work;
-        _roundImagePath = roundImagePath;
+        _roundCustomConfig = roundCustomConfig;
+        CustomConfigControl = _roundCustomConfig?.ConfigurationControl;
     }
 }
