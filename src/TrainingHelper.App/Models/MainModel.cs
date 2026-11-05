@@ -7,20 +7,20 @@ using TrainingHelper.Common.Sound;
 using TrainingHelper.App.Settings;
 using TrainingHelper.Common.Settings;
 using System.Linq;
+using TrainingHelper.App.Plugins;
 
 namespace TrainingHelper.App.Models;
 
 internal class MainModel
 {
     public event EventHandler<(int SecondsPassed, int TotalSeconds, int CurrentRound, bool Work, string ImagPath)>? CountdownStateChanged;
-    public IReadOnlyCollection<string> AudioDevices => _sound.SoundDevicesNames;
+    public IReadOnlyCollection<string> AudioDevices => _sound?.SoundDevicesNames ?? Array.Empty<string>();
 
-    public string SelectedAudioDevice => _sound.SelectedAudioDevice;
+    public string SelectedAudioDevice => _sound?.SelectedAudioDevice ?? string.Empty;
 
     private CancellationTokenSource? _countdownCts = null;
-    private readonly ISound _sound;
+    private readonly ISound? _sound;
 
-    private readonly bool _noSound = false;
     private bool _pause = false;
     private readonly TimeSpan _countdownStart = TimeSpan.Zero;
     private static readonly TimeSpan _oneSecond = TimeSpan.FromSeconds(1);
@@ -31,16 +31,15 @@ internal class MainModel
     {
         _sound = sound;
         _countdownStart = settingsService.Load().CountdownStart;
-        if (_sound.SoundDevicesNames.Count == 0)
+        if (_sound?.SoundDevicesNames.Count == 0)
         {
             _logger.Warn($"Can't find any sound devices names. There will be no sound.");
-            _noSound = true;
         }
     }
 
     public void ChangeSelectedAudioDevice(string deviceName)
     {
-        _sound.ChangeAudiDevice(deviceName);
+        _sound?.ChangeAudiDevice(deviceName);
     }
 
     public async Task StartCountdownAsync(IEnumerable<IRoundDefinition> roundDefinitions)
@@ -49,7 +48,7 @@ internal class MainModel
         _countdownCts?.Dispose();
 
         _countdownCts = new CancellationTokenSource();
-        await PlaySoundAsync(_sound.PlayStartJingleAsyncAsync, _countdownCts.Token);
+        await PlaySoundAsync(_sound != null ? _sound.PlayStartJingleAsyncAsync : null, _countdownCts.Token);
 
         int roundNumber = 1;
         foreach (var round in roundDefinitions)
@@ -64,7 +63,7 @@ internal class MainModel
             }
         }
 
-        await PlaySoundAsync(_sound.PlayEndJingleAsyncAsync, _countdownCts.Token);
+        await PlaySoundAsync(_sound != null ? _sound.PlayEndJingleAsyncAsync : null, _countdownCts.Token);
 
         async Task<bool> DoIntervalAsync(TimeSpan workTime, TimeSpan breakTime, int currentRound, IEnumerable<string> currentImages)
         {
@@ -75,9 +74,9 @@ internal class MainModel
 
             try
             {
-                if (!await PlaySoundAsync(_sound.PlayWorkJingleAsync, _countdownCts.Token) ||
+                if (!await PlaySoundAsync(_sound != null ? _sound.PlayWorkJingleAsync : null, _countdownCts.Token) ||
                    !await CountdownAsync((int)workTime.TotalSeconds, true, currentRound, currentImages, _countdownCts.Token) ||
-                   !await PlaySoundAsync(_sound.PlayBreakJingleAsync, _countdownCts.Token) ||
+                   !await PlaySoundAsync(_sound != null ? _sound.PlayBreakJingleAsync : null, _countdownCts.Token) ||
                    !await CountdownAsync((int)breakTime.TotalSeconds, false, currentRound, Array.Empty<string>(), _countdownCts.Token))
                 {
                     return false;
@@ -125,7 +124,7 @@ internal class MainModel
                     using var oneSecondCts = new CancellationTokenSource();
                     using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token, oneSecondCts.Token);
                     oneSecondCts.CancelAfter(_maxBeepTime);
-                    await PlaySoundAsync(_sound.PlayCountdownJingleAsync, linkedCts.Token);
+                    await PlaySoundAsync(_sound != null ? _sound.PlayCountdownJingleAsync : null, linkedCts.Token);
                 }
             }
         }
@@ -134,9 +133,9 @@ internal class MainModel
         return true;
     }
 
-    private async Task<bool> PlaySoundAsync(Func<CancellationToken, Task> playFunction, CancellationToken ct)
+    private async Task<bool> PlaySoundAsync(Func<CancellationToken, Task>? playFunction, CancellationToken ct)
     {
-        await (!_noSound ? playFunction(ct) : Task.CompletedTask);
+        await (playFunction != null ? playFunction(ct) : Task.CompletedTask);
         return !ct.IsCancellationRequested;
     }
 }
