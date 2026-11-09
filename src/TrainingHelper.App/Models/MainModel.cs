@@ -7,7 +7,6 @@ using TrainingHelper.Common.Sound;
 using TrainingHelper.App.Settings;
 using TrainingHelper.Common.Settings;
 using System.Linq;
-using TrainingHelper.App.Plugins;
 
 namespace TrainingHelper.App.Models;
 
