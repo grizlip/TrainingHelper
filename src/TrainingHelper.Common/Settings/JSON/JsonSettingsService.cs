@@ -9,14 +9,21 @@ public sealed class JsonSettingsService<TSettings> : ISettingsService<TSettings>
     private readonly JsonSerializerOptions _jsonOptions;
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-    public JsonSettingsService()
+    public JsonSettingsService(string? filePath = null)
     {
-        if (Directory.Exists(ConfigDirectory.Value) == false)
+        if (string.IsNullOrEmpty(filePath))
         {
-            Directory.CreateDirectory(ConfigDirectory.Value);
+            if (Directory.Exists(ConfigDirectory.Value) == false)
+            {
+                Directory.CreateDirectory(ConfigDirectory.Value);
+            }
+
+            _filePath = Path.Combine(ConfigDirectory.Value, $"{typeof(TSettings).Name}.json");
         }
-        
-        _filePath = Path.Combine(ConfigDirectory.Value, $"{typeof(TSettings).Name}.json");
+        else
+        {
+            _filePath = filePath;
+        }
 
         _jsonOptions = new JsonSerializerOptions
         {
