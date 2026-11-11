@@ -5,7 +5,6 @@ namespace TrainingHelper.Common.Plugins;
 
 public class PluginLoader : IPluginLoader
 {
-    private const string _pluginManifestFile = "plugin.json";
     private readonly Dictionary<string, JsonSettingsService<PluginManifest>> _availableManifests = new Dictionary<string, JsonSettingsService<PluginManifest>>();
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
     
@@ -29,9 +28,9 @@ public class PluginLoader : IPluginLoader
                 continue;
             }
 
-            if (File.Exists(Path.Combine(pluginDir, _pluginManifestFile)))
+            if (File.Exists(Path.Combine(pluginDir, $"{nameof(PluginManifest)}.json")))
             {
-                var manifestSettings = new JsonSettingsService<PluginManifest>(Path.Combine(pluginDir, _pluginManifestFile));
+                var manifestSettings = new JsonSettingsService<PluginManifest>(Path.Combine(pluginDir));
 
                 var pluginPath = Path.Combine(pluginDir, manifestSettings.Load().EntryAssembly);
                 if (File.Exists(pluginPath))
@@ -45,7 +44,7 @@ public class PluginLoader : IPluginLoader
             }
             else
             {
-                _logger.Warn($"Plugin directory does not contain a {_pluginManifestFile} file: {pluginDir}");
+                _logger.Warn($"Plugin directory does not contain a {nameof(PluginManifest)} file: {pluginDir}");
             }
         }
     }

@@ -9,21 +9,16 @@ public sealed class JsonSettingsService<TSettings> : ISettingsService<TSettings>
     private readonly JsonSerializerOptions _jsonOptions;
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-    public JsonSettingsService(string? filePath = null)
+    public JsonSettingsService(string? alternativeRootConfigPath = null)
     {
-        if (string.IsNullOrEmpty(filePath))
-        {
-            if (Directory.Exists(ConfigDirectory.Value) == false)
-            {
-                Directory.CreateDirectory(ConfigDirectory.Value);
-            }
+        string configRootPath = string.IsNullOrEmpty(alternativeRootConfigPath) ? AppRootConfigDirectory.Value : alternativeRootConfigPath;
 
-            _filePath = Path.Combine(ConfigDirectory.Value, $"{typeof(TSettings).Name}.json");
-        }
-        else
+        if (Directory.Exists(configRootPath) == false)
         {
-            _filePath = filePath;
+            Directory.CreateDirectory(configRootPath);
         }
+
+        _filePath = Path.Combine(configRootPath, $"{typeof(TSettings).Name}.json");
 
         _jsonOptions = new JsonSerializerOptions
         {
@@ -69,7 +64,7 @@ public sealed class JsonSettingsService<TSettings> : ISettingsService<TSettings>
         }
     }
 
-    private static Lazy<string> ConfigDirectory = new Lazy<string>(static () =>
+    private static Lazy<string> AppRootConfigDirectory = new Lazy<string>(static () =>
         {
             if (OperatingSystem.IsWindows())
             {
