@@ -51,10 +51,17 @@ public class PluginLoader : IPluginLoader
 
     public IEnumerable<T> LoadPlugins<T>() where T : IPlugin
     {
+        var ids = new List<string>();
         foreach (var pluginPath in _availableManifests.Keys)
         {
             foreach (var plugin in LoadPlugins<T>(pluginPath))
             {
+                if(ids.Contains(plugin.Id))
+                {
+                    _logger.Warn($"Duplicate plugin ID detected: {plugin.Id}. Skipping this plugin.");
+                    continue;
+                }
+                ids.Add(plugin.Id);
                 yield return plugin;
             }
         }

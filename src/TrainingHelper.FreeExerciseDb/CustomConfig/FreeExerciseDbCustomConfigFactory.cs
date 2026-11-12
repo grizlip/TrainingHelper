@@ -10,6 +10,10 @@ namespace TrainingHelper.FreeExerciseDb.CustomConfig;
 internal class FreeExerciseDbCustomConfigFactory : IRoundCustomConfigFactory
 {
     private readonly ConfigureExerciseModel _model;
+    private static readonly string _pluginId = "LocalFreeExerciseDbCustomConfigFactory";
+    
+    public string Id => _pluginId;
+    public string Description => "Local FreeExerciseDb Custom Config Factory";
 
     public FreeExerciseDbCustomConfigFactory()
     {
