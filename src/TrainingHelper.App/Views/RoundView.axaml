@@ -4,7 +4,7 @@
              x:Class="TrainingHelper.App.Views.RoundView"
              x:DataType="vm:RoundViewModel">
     <Grid ColumnDefinitions="Auto,*">
-        <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="*,*,*">
+        <Grid ColumnDefinitions="Auto,250" RowDefinitions="*,*,*,*">
             <Grid.Styles>
                 <Style Selector="TimePicker">
                     <Setter Property="Margin" Value="5" />
@@ -21,6 +21,13 @@
             <TimePicker Grid.Row="1" Grid.Column="1" SelectedTime="{Binding Break}" />
             <Label Grid.Row="2" Grid.Column="0">Repet: </Label>
             <NumericUpDown FormatString="0" Margin="5" Grid.Row="2" Grid.Column="1" Minimum="1" Maximum="100" Value="{Binding Repetitions}" />
+            <Label Grid.Row="3" Grid.Column="0">Exercises list: </Label>
+            <ComboBox Grid.Row="3" Grid.Column="1" Margin="5" HorizontalAlignment="Stretch"
+                      ItemsSource="{Binding Factories}"
+                      SelectedItem="{Binding RoundCustomConfigFactory}"
+                      DisplayMemberBinding="{Binding Description}"
+                      ToolTip.Tip="{Binding RoundCustomConfigFactory.Description}"
+                      />
         </Grid>
         <ContentControl Grid.Column="1"  Content="{Binding CustomConfigControl}" />
     </Grid>

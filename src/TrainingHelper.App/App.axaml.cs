@@ -11,16 +11,21 @@ using TrainingHelper.Common.Settings.JSON;
 using TrainingHelper.Common.Settings;
 using TrainingHelper.Common.Plugins;
 using TrainingHelper.Common.Exercise;
-using System.Linq;
+using NLog;
+using System.Collections.Generic;
+using System;
 
 namespace TrainingHelper.App;
 
 public partial class App : Application
 {
     private readonly JsonSettingsService<AppSettings> _jsonSettingsService;
+    private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
+    private readonly List<IPlugin> plugins = [];
 
     public App()
     {
+        _logger.Trace($"===App started at {DateTime.Now}===");
         _jsonSettingsService = new JsonSettingsService<AppSettings>();
     }
 
@@ -33,12 +38,22 @@ public partial class App : Application
     {
         var collection = new ServiceCollection();
         PluginLoader loader = new PluginLoader(_jsonSettingsService.Load().PluginsPath);
-        var customConfigFactories = loader.LoadPlugins<IRoundCustomConfigFactory>().ToList();
+
+        foreach (var factory in loader.LoadPlugins<IRoundCustomConfigFactory>())
+        {
+            if (factory.Activate())
+            {
+                collection.AddSingleton(factory);
+                plugins.Add(factory);
+            }
+            else
+            {
+                _logger.Warn($"Failed to activate plugin: {factory.GetType().Name}");
+            }
+        }
 
         collection.AddSingleton<ISettingsService<AppSettings>>(_jsonSettingsService);
-
         collection.AddSdlSound();
-        collection.AddSingleton(customConfigFactories[0]);
         collection.AddSingleton<MainModel>();
         collection.AddSingleton<MainWindowViewModel>();
         var services = collection.BuildServiceProvider();
@@ -49,8 +64,21 @@ public partial class App : Application
             {
                 DataContext = services.GetRequiredService<MainWindowViewModel>()
             };
+            desktop.Exit += OnExit;
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private void OnExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
+    {
+        _logger.Trace($"===App exited at {DateTime.Now}===");
+        foreach (var plugin in plugins)
+        {
+            if (!plugin.Deactivate())
+            {
+                _logger.Warn($"Failed to deactivate plugin: {plugin.GetType().Name}");
+            }
+        }
     }
 }

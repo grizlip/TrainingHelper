@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using TrainingHelper.App.Models;
@@ -9,7 +11,7 @@ namespace TrainingHelper.App.ViewModels;
 
 internal partial class RoundViewModel : ObservableObject, IRoundDefinition
 {
-    public IEnumerable<string> RoundImagesPaths => _roundCustomConfig?.ExercsieImagesPaths ?? new List<string>();
+    public IEnumerable<string> RoundImagesPaths => _roundCustomConfig?.ExercsieImagesPaths ?? Array.Empty<string>();
 
     [ObservableProperty]
     private TimeSpan _interval;
@@ -26,14 +28,29 @@ internal partial class RoundViewModel : ObservableObject, IRoundDefinition
     [ObservableProperty]
     private Control? _customConfigControl;
 
-    private readonly IRoundCustomConfig? _roundCustomConfig;
+    [ObservableProperty]
+    private ObservableCollection<IRoundCustomConfigFactory> _factories = [];
 
-    public RoundViewModel(TimeSpan interval, TimeSpan breakTime, bool work, IRoundCustomConfig roundCustomConfig)
+    [ObservableProperty]
+    private IRoundCustomConfigFactory _roundCustomConfigFactory;
+
+    private IRoundCustomConfig? _roundCustomConfig;
+
+    public RoundViewModel(TimeSpan interval, TimeSpan breakTime, bool work, IEnumerable<IRoundCustomConfigFactory> factories)
     {
         _interval = interval;
         _break = breakTime;
         _work = work;
-        _roundCustomConfig = roundCustomConfig;
+        _factories = new ObservableCollection<IRoundCustomConfigFactory>(factories)
+        {
+            new NoneRoundCustomConfigFactory()
+        };
+        RoundCustomConfigFactory = _factories.First(item => item.Id == string.Empty);
+    }
+
+    partial void OnRoundCustomConfigFactoryChanging(IRoundCustomConfigFactory value)
+    {
+        _roundCustomConfig = value.Create();
         CustomConfigControl = _roundCustomConfig?.ConfigurationControl;
     }
 }

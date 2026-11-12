@@ -9,6 +9,7 @@ using TrainingHelper.App.Settings;
 using TrainingHelper.App.Models;
 using TrainingHelper.Common.Settings;
 using TrainingHelper.Common.Exercise;
+using System.Collections.Generic;
 
 namespace TrainingHelper.App.ViewModels;
 
@@ -53,7 +54,7 @@ internal partial class MainWindowViewModel : ObservableObject
     private bool _hasAudioDevices;
 
     [ObservableProperty]
-    private ObservableCollection<string> _audioDevices = new();
+    private ObservableCollection<string> _audioDevices = [];
 
     [ObservableProperty]
     private string? _selectedAudioDevice;
@@ -69,15 +70,14 @@ internal partial class MainWindowViewModel : ObservableObject
 
     private readonly MainModel _model;
     private readonly AppSettings _settings;
-    private readonly IRoundCustomConfigFactory _roundCustomConfigFactory;
+    private readonly IEnumerable<IRoundCustomConfigFactory> _factories;
     private static readonly ILogger _logger = LogManager.GetCurrentClassLogger();
 
-    public MainWindowViewModel(MainModel model, ISettingsService<AppSettings> settingsService, IRoundCustomConfigFactory roundCustomConfigFactory)
+    public MainWindowViewModel(MainModel model, ISettingsService<AppSettings> settingsService, IEnumerable<IRoundCustomConfigFactory> roundCustomConfigFactory)
     {
-        _logger.Trace($"===App started at {DateTime.Now}===");
         _settings = settingsService.Load();
         _model = model;
-        _roundCustomConfigFactory = roundCustomConfigFactory;
+        _factories = roundCustomConfigFactory;
         _model.CountdownStateChanged += OnCountdownStateChanged;
         Interval = _settings.WorkTime;
         Break = _settings.BreakTime;
@@ -164,7 +164,7 @@ internal partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(IsCoundownNotInProgress))]
     private async Task AddRound()
     {
-        Rounds.Add(new RoundViewModel(Interval, Break, true, _roundCustomConfigFactory.Create()));
+        Rounds.Add(new RoundViewModel(Interval, Break, true,_factories));
     }
 
     [RelayCommand(CanExecute = nameof(CanRemoveRound))]
