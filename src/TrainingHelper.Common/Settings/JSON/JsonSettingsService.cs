@@ -68,7 +68,7 @@ public sealed class JsonSettingsService<TSettings> : ISettingsService<TSettings>
         {
             if (OperatingSystem.IsWindows())
             {
-                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TraningHelper.App");
+                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TrainingHelper.App");
             }
 
             if (OperatingSystem.IsLinux())
@@ -79,7 +79,7 @@ public sealed class JsonSettingsService<TSettings> : ISettingsService<TSettings>
                     ? xdgConfigHome
                     : Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
-                return Path.Combine(basePath, "TraningHelper.App");
+                return Path.Combine(basePath, "TrainingHelper.App");
             }
 
             return "UserConfig";
