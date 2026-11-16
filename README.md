@@ -1,76 +1,82 @@
 # TrainingHelper
 
-TrainingHelper is a desktop application for planning exercise rounds and running
-work/break countdowns. The app can show exercise images during work intervals
-and play audio cues.
+TrainingHelper is a lightweight desktop workout timer for organizing exercise rounds, tracking work/break periods, and playing audio cues. The app is built with Avalonia and targets .NET 10.
 
-## Solution structure
+The project centers around a configurable workout plan: each round has an interval, break length, repetition count, and optional custom exercise configuration. During a workout, the app shows the current round state, can display exercise images, and emits a countdown beep as the interval ends.
 
-The solution is [src/TrainingHelper.slnx](src/TrainingHelper.slnx), which
-contains these projects:
+## Project structure
 
-| Project | Purpose |
-| --- | --- |
-| `TrainingHelper.App` | Avalonia desktop UI, application startup, and countdown coordination |
-| `TrainingHelper.Common` | Shared settings and exercise/sound interfaces |
-| `TrainingHelper.FreeExerciseDb` | Exercise data and per-round exercise/image selection |
-| `TrainingHelper.Sdl` | Audio device support and SDL-based sound playback |
-| `SDL2-CS` (`SDL2-CS.Core.csproj`) | SDL bindings used by the audio implementation |
+The solution entry point is [src/TrainingHelper.slnx](src/TrainingHelper.slnx). It contains these projects:
 
-The app composes the services at startup using dependency injection. Each
-settings type is stored separately as JSON through the shared
-`ISettingsService<TSettings>` implementation; this is not an `appsettings.json`
-configuration setup.
+- `TrainingHelper.App` - Avalonia desktop UI, dependency injection, startup, and the countdown loop
+- `TrainingHelper.Common` - shared contracts for settings, plugins, and exercise configuration
+- `TrainingHelper.FreeExerciseDb` - Free Exercise DB integration and round configuration UI
+- `TrainingHelper.FreeExerciseDbApi` - ASP.NET Core sample API that serves exercise data
+- `TrainingHelper.Sdl` - sound backend selection and SDL/MP3 integration
+- `SDL2-CS` - managed SDL bindings used by the sound layer
 
-## User configuration
+## What the app does
 
-Settings are stored in a per-user configuration directory. The application
-creates this directory when it starts:
+- Creates a multi-round workout plan from one or more rounds
+- Displays the current work/break state and elapsed time in the UI
+- Supports optional exercise images per round
+- Plays start, work, break, countdown, and end cues
+- Lets the user pick an audio device from detected system devices
+- Allows round behavior to be extended through a simple plugin system
 
-- **Windows:** `%APPDATA%\TraningHelper.App`
-- **Linux:** `$XDG_CONFIG_HOME/TraningHelper.App`, or the platform application
-  data directory if `XDG_CONFIG_HOME` is not set
-- **Other platforms:** `UserConfig` relative to the application working
-  directory
+At startup, the app loads round custom-config factories from a plugin directory, then registers them with the dependency injection container. The built-in Free Exercise DB factory adds exercise lookup and image selection to the round configuration flow.
 
-The directory name is spelled `TraningHelper.App` in the current implementation.
-Each settings file is named after its settings type:
+## Runtime architecture
 
-| File | Purpose |
-| --- | --- |
-| `AppSettings.json` | Default work, break, and countdown cue durations |
-| `FreeExerciseDbConfig.json` | Paths to the exercise JSON data and image directory |
-| `SoundConfig.json` | Selected audio device and optional MP3 cue files |
+The app is organized around a few key pieces:
 
-`AppSettings.json` and `SoundConfig.json` are optional; if either is missing,
-the app uses that settings type's defaults. Loading defaults does not write a
-file, so create the file in the configuration directory to customize values
-that the app does not expose in its UI. `FreeExerciseDbConfig.json` must be
-created and contain a valid exercise JSON file path for the app to start.
+- `App` wires up dependency injection, loads plugins, and creates the main window
+- `MainModel` owns the countdown loop and sound playback logic
+- `MainWindowViewModel` exposes the UI state and commands for starting, pausing, and stopping workouts
+- `RoundViewModel` holds per-round settings and custom configuration UI
+- `ISettingsService<T>` loads and saves JSON settings for each settings type
+- `PluginLoader` discovers plugin directories and loads types implementing `IPlugin`
 
-### Workout timing: `AppSettings.json`
+## Configuration
 
-The default values are 30 seconds of work, 3 seconds of break, and a 3-second
-countdown cue window:
+The app stores JSON settings in a per-user config directory. The current implementation creates a directory named `TrainingHelper.App`.
+
+### Configuration root
+
+- Windows: `%APPDATA%\TrainingHelper.App`
+- Linux: `$XDG_CONFIG_HOME/TrainingHelper.App`, or the platform application data directory when `XDG_CONFIG_HOME` is not set
+- Other platforms: `UserConfig` relative to the working directory
+
+### Files created there
+
+- `AppSettings.json`
+- `SoundConfig.json`
+
+### `AppSettings.json`
+
+This file controls the default workout timings and plugin path:
 
 ```json
 {
   "WorkTime": "00:00:30",
   "BreakTime": "00:00:03",
-  "CountdownStart": "00:00:03"
+  "CountdownStart": "00:00:03",
+  "PluginsPath": "Plugins"
 }
 ```
 
-`WorkTime` and `BreakTime` set the initial interval and break durations for a
-new workout plan. `CountdownStart` controls when the final countdown sound
-starts. The settings tab currently lets you select an audio device; it does not
-edit or save these timing values. Changes made to round durations in the plan
-are also not saved between runs.
+Defaults in the current code are:
 
-### Exercise data and images: `FreeExerciseDbConfig.json`
+- `WorkTime`: 30 seconds
+- `BreakTime`: 3 seconds
+- `CountdownStart`: 3 seconds
+- `PluginsPath`: `Plugins`
 
-Configure the path to a Free Exercise DB JSON file and the base directory for
-its images:
+`AppSettings.json` is optional; if it is missing, the app falls back to the in-code defaults. The project does not use a standard ASP.NET `appsettings.json` file pattern for the desktop app.
+
+### `FreeExerciseDbConfig.json`
+
+The Free Exercise DB integration expects this shape:
 
 ```json
 {
@@ -79,38 +85,57 @@ its images:
 }
 ```
 
-The property names above match the application exactly. The exercise file must
-contain a top-level JSON array of exercise records with `id`, `name`, and
-`images` fields (as well as the other fields in the Free Exercise DB format).
-Image entries are combined with `ImagesPathBase`; use paths to files that
-already exist. Absolute paths are recommended.
+The values are used to point to the source exercise JSON and the root folder for exercise images. The code checks that the configured exercise file exists before creating the exercise provider. If the config is missing or invalid, startup can fail.
 
-This configuration is required for startup and exercise selection: the app
-checks that the exercise JSON file exists when it creates the exercise
-provider. If the config file is missing, or the configured path is invalid,
-startup fails. The app does not download the database or images.
+### `SoundConfig.json`
 
-### Audio: `SoundConfig.json`
+This file stores audio configuration:
 
-Audio settings have these properties:
+```json
+{
+  "DefaultAudioDeviceSelection": "",
+  "SoundFiles": {
+    "Work": "/path/to/work.mp3",
+    "Break": "/path/to/break.mp3",
+    "Start": "/path/to/start.mp3",
+    "End": "/path/to/end.mp3",
+    "Countdown": "/path/to/countdown.mp3"
+  }
+}
+```
 
-- `DefaultAudioDeviceSelection`: the exact audio device name to select. The app
-  updates this value when a device is selected in the Settings tab. With an
-  empty name, the audio backend selects its default device. If a saved name is
-  no longer available, the built-in SDL backend chooses the first discovered
-  device; the MP3 backend may fail to initialize until a valid device is
-  selected.
-- `SoundFiles`: optional paths to MP3 files keyed by sound type: `Work`,
-  `Break`, `Start`, `End`, and `Countdown`.
+`DefaultAudioDeviceSelection` selects an audio device by name. If it is empty, the backend chooses the default device. `SoundFiles` is optional; when all five sound entries are present, the app switches to the MP3-backed sound path. Otherwise it falls back to the built-in synthesized SDL cues.
 
-The app uses MP3 playback only when `SoundFiles` contains all five sound types.
-Otherwise, it uses the built-in synthesized SDL cues. When MP3 mode is active,
-each configured path should point to an existing MP3 file; missing files are
-logged and that cue will not play. MP3 file paths are used as supplied, so
-absolute paths are recommended.
+## Free Exercise DB data
 
-### Logging
+The project includes a separate exercise database model and configuration UI in `TrainingHelper.FreeExerciseDb`. This module defines the exercise schema used by the workout round custom config and is designed to work with Free Exercise DB JSON data.
 
-`TrainingHelper.App/nlog.config` configures NLog to write Trace-and-above
-messages to the console and to `all.log` in the application's working directory.
-The app project copies this file to its output directory.
+The API project, `TrainingHelper.FreeExerciseDbApi`, is a companion ASP.NET Core service that reads a local `Data/exercises.json` file and exposes endpoints such as:
+
+- `/api/exercises`
+- `/api/exercises/search`
+- `/api/exercises/{id}`
+
+This server is not the desktop app itself; it is a standalone API for serving exercise metadata.
+
+## Building and running
+
+Requirements:
+
+- .NET 10 SDK
+- SDL development dependencies if you are building the audio stack on the target platform
+
+From the repository root:
+
+```bash
+dotnet restore
+dotnet build src/TrainingHelper.slnx
+dotnet run --project src/TrainingHelper.App/TrainingHelper.App.csproj
+```
+
+The solution file is `src/TrainingHelper.slnx`, and the desktop app entry point is `src/TrainingHelper.App/TrainingHelper.App.csproj`.
+
+## Notes
+
+- The project is currently structured as a desktop utility rather than a web application.
+- The app is intentionally configurable via JSON files and a plugin model rather than a single central `appsettings.json` file.
